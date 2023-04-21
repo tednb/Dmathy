@@ -1,0 +1,127 @@
+---
+title: "GSE61258"
+output:
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+knitr::opts_knit$set(root.dir = "/mnt/local-disk/data/guoxiaolong/Renv")
+```
+
+```{r packages}
+
+source("~/code/Dmathy/Damthy.R")
+```
+
+```{r server 3}
+library(minfi)
+library(minfiData)
+load("~/data/GSE61258.Rd")
+GRset =makeGenomicRatioSetFromMatrix(matrix,array ="IlluminaHumanMethylation450k",annotation = "ilmn12.hg19")  
+  # filter CpGs with SNPs
+GRset <- dropLociWithSnps(GRset,snps = c("CpG", "SBE"))
+  # delete sex chromosome CpGs
+annotation <- getAnnotation(GRset)
+sex_probe <- rownames(annotation)[annotation$chr %in% c("chrX","chrY")]
+keep <- !(featureNames(GRset) %in% sex_probe)
+GRset <- GRset[keep,]
+m <- getBeta(GRset)
+```
+
+```{r server 2}
+library(data.table)
+load("~/data/infinium/liver_sample/fat_liver/GSE61258/GSE61258_m.Rd")
+raw.o <- new("raw.o")
+
+raw.o@raw.m <- m
+GPL <- fread("~/data/infinium/GPL13534/GPL13534-11288.txt", header = T)
+GPL <- as.data.frame(GPL)
+idx <- match(rownames(raw.o@raw.m),GPL$Name)
+raw.o@raw.g <- GPL[idx,]
+series <- t(read.table("~/data/infinium/liver_sample/79_livers(25_healthy)/GSE61258/series.txt",header = T))[-1,]
+```
+
+features
+
+```{r}
+age <- as.numeric(sapply(strsplit(series[,4], " "), function(x) x[[2]]))
+bmi <- as.numeric(sapply(strsplit(series[,5], " "), function(x) x[[2]]))
+subjectid <- as.factor(sapply(strsplit(series[,2], " "), function(x) x[[2]]))
+sex <- sapply(strsplit(series[,3], " "), function(x) x[[2]])
+sex <- as.numeric(ifelse(sex=="male",1,0))
+disease <- sapply(strsplit(series[,6], " "), function(x) x[[2]])
+disease[which(disease == "Control")] <- 0
+disease[which(disease == "HealthyObese")] <- 1
+disease[which(disease == "NAFLD")] <- 2
+disease[which(disease == "PBC")] <- 3
+disease[which(disease == "PSC")] <- 4
+disease[which(disease == "NASH")] <- 5
+s <- data.frame(sex,age,bmi,disease,subjectid)
+raw.o@raw.s <- s
+
+```
+
+qc.o
+
+```{r}
+raw.o <- imp(raw.o)
+raw.o@beta_dtr
+qc.o <- f.qc.o(raw.o)
+qc.o@ctf.o <- CTF(qc.o,mrefLiver.m)
+qc.o@svd.o <- lm_svd(qc.o)
+p_h(qc.o,pic = c(27,4))
+
+```
+
+CellDMC
+
+```{r}
+library(EpiDISH)
+covs <- model.matrix(~ sex + disease + bmi, data = s)
+celldmc.o <- CellDMC(qc.o@m, s$age ,qc.o@ctf.o[[1]], 
+                     cov.mod = covs, 
+                     adjPMethod = "fdr",
+                     adjPThresh = 0.05,
+                     sort = FALSE,
+                     mc.cores = 40)
+dmcts<- celldmc.o$dmct
+sum(dmcts[,2] != 0) # Chol:62329
+sum(dmcts[,4] != 0) # Hep 42596
+sum(dmcts[,3] != 0) # EC 54
+sum(dmcts[,5] != 0) # Kup 0
+sum(dmcts[,5] != 0) #Lym 0
+coefs <- celldmc.o$coe
+all_t <- as.data.frame(lapply(coefs, function(x) x$t))
+rownames(all_t) <- rownames(coefs$Chol)
+#FDR threshold
+fdr_threshold_Chol<- min(abs(coefs$Chol$t[sapply(coefs$Chol$adjP, function(x) {x<=0.05})]))
+fdr_threshold_Hep <- min(abs(coefs$Hep$t[sapply(coefs$Hep$adjP, function(x) {x<=0.05})]))
+pdf("DMCTs.pdf", width=6,height=6)
+smoothScatter(all_t[, "Chol"], all_t[, "Hep"], xlab = "t -stat. (CellDMC:Chol)", 
+              ylab = "t -stat. (CellDMC:Hep)", 
+              xlim = c(-7,7), ylim = c(-7,7), cex = 1.5, 
+              main = "CT specific age-DMCs predicted by CellDMC")
+abline(v = 0, lty = 2, col = "black")
+abline(h = 0, lty = 2, col = "black")
+abline(v = fdr_threshold_Chol, lty = 2, col = "blue")
+abline(v = -fdr_threshold_Chol, lty = 2, col = "blue")
+abline(h = fdr_threshold_Hep, lty = 2, col = "blue")
+abline(h = -fdr_threshold_Hep, lty = 2, col = "blue")
+dev.off()
+```
+
+he.o\
+
+```{r}
+he.o <- f.he.o(qc.o)
+he.o@ctf.o <- CTF(he.o,mrefLiver.m)
+# GSM1500969 is an outlier
+he.o@m <- he.o@m[,-which(colnames(he.o@m) == "GSM1500969")]
+he.o@s <- he.o@s[-which(rownames(he.o@s) == "GSM1500969"),]
+he.o@ctf.o <- CTF(he.o,mrefLiver.m)
+he.o@svd.o <- lm_svd(he.o)
+p_h(he.o, ,pic = c(26,7))
+```

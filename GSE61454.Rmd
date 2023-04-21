@@ -1,0 +1,73 @@
+---
+title: "GSE61454"
+output:
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+knitr::opts_knit$set(root.dir = "/mnt/local-disk/data/guoxiaolong/Renv")
+```
+
+```{r}
+source("~/code/Dmathy/Damthy.R")
+library(minfi)
+```
+
+```{r}
+library(data.table)
+series <- t(fread("~/data/infinium/liver_sample/fat_liver/GSE61454/series.txt",header = F))
+colnames(series) <- series[1,]
+series <- series[-1,]
+GPL <- fread("~/data/infinium/GPL13534/GPL13534-11288.txt", sep = "\t", header = T)
+rgset <- read.metharray.exp("~/data/infinium/liver_sample/fat_liver/GSE61454/idat")
+rawDat <- f.rawD(GPL = GPL,rgset = rgset,series = series)
+raw.o <- f.raw.o(rawDat)
+# coverage
+coverage(raw.o)
+raw.o <- imp(raw.o,threshold = 0.9)
+raw.o@beta_dtr
+
+```
+
+features
+
+```{r}
+coln <- sapply(strsplit(colnames(raw.o@raw.m), "_"), function(x) x[[1]])
+identical(rownames(series),coln) # TRUE
+tissue <- sapply(strsplit(series[,1], "_"), function(x) x[[1]])
+idx <- which(tissue == "Liver")
+raw.o@raw.m <- raw.o@raw.m[,idx]
+series <- series[idx,] # all livers
+age <- as.numeric(sapply(strsplit(series[,4], " "), function(x) x[[3]]))
+sex <- sapply(strsplit(series[,3], " "), function(x) x[[2]])
+sex <- as.numeric(ifelse(sex=="male",1,0))
+bmi <- as.numeric(sapply(strsplit(series[,5], " "), function(x) x[[2]]))
+batch <- as.factor(rep("9_17_2014", times = length(age)))
+
+s <- data.frame(age,sex,bmi)
+raw.o@raw.s <- s
+```
+
+```{r}
+qc.o <- f.qc.o(raw.o)
+qc.o@beta_dtr[[1]]
+qc.o@ctf.o <- CTF(qc.o,mrefLiver.m)
+qc.o@svd.o <- lm_svd(qc.o)
+p_h(qc.o,pic = c(28,2))
+```
+
+CellDMC
+
+```{r}
+library(EpiDISH)
+celldmc.o <- CellDMC(qc.o@m, qc.o@s$age ,qc.o@ctf.o[[1]], 
+                     cov.mod = NULL, 
+                     adjPMethod = "fdr",
+                     adjPThresh = 0.05,
+                     sort = FALSE,
+                     mc.cores = 40)
+dmcts<- celldmc.o$dmct
+```

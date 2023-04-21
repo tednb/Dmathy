@@ -18,7 +18,7 @@ setClass("Damthy", slots = list(name = "character"),
          prototype = list(name = "For infinuim"))
   setClass("rawD",
            contains = "Damthy",
-           slots = list(idat = "matrix",
+           slots = list(rgset = "list",
                         m_pval = "data.frame",
                         GPL = "data.frame",
                         series = "data.frame"))
@@ -54,25 +54,29 @@ setClass("Damthy", slots = list(name = "character"),
 
 
 ## ----instantiation function-----------------------------------------
-f.rawD <- function(idat=0,GPL,m_pval=0,series,...){
-  if (idat == 0){
+f.rawD <- function(rgset,GPL,m_pval = data.frame(),series,...){
+  if (ncol(m_pval) != 0){
     print(paste0("you got the processed data with p values of ",GSEnumber))
     rawD <- new("rawD", m_pval = m_pval, series = series) 
     rawD@GPL <- GPL[match(rawD@m_pval[,1],GPL$Name),] #match GPL to m
-  }else if(m_pval == 0) {
-    rawD <- new("rawD", idat = idat, series = series)
+  }else if(ncol(m_pval) == 0) {
+    rgset <- rgset
+    rawD <- new("rawD", rgset = list(rgset), series = as.data.frame(series))
+    rawD@GPL <- GPL #match GPL to m
     print(paste0("you got the idat data of ",GSEnumber))
-  }
+  
+    }
   return(rawD)
 }
 
 f.raw.o <- function(rawD,...){
   library(minfi)
-  library(minfiData)
   library(parallel)
-  library(impute)
+
   raw.o <- new("raw.o")
   print(paste0("you got the processed data of ",GSEnumber))
+  if (length(rawD@m_pval) != 0){
+  library(minfiData)
   print("Tidy matrix with p values, you need to check the first column of the matrix (CpGs)!")
   # extract beta and P
   DNAm.beta <- rawD@m_pval[, seq(from=2, to=ncol(rawD@m_pval)-1, by= 2)]
@@ -93,24 +97,74 @@ f.raw.o <- function(rawD,...){
   sex_probe <- rownames(annotation)[annotation$chr %in% c("chrX","chrY")]
   keep <- !(featureNames(GRset) %in% sex_probe)
   GRset <- GRset[keep,]
-  #-coverage filter-----------------------------------------------------------------------------------------------
   m <- getBeta(GRset)
   p.m <- DNAm.Pval[rownames(m),]
-  idx <- pbapply(p.m,1,function(x) {sum(x < 0.01)/length(x) > 0.99})
-  p.m <- p.m[which(idx),]
-  m <- m[which(idx),]
-  #-imputation--------------------------------------------------------------------------------------------
-  if (any(is.na(m))){
-  m <- impute.knn(m,k=5)$data
   }
+  if (length(rawD@rgset) != 0){
+    rgset <- rawD@rgset[[1]]
+    getManifest(rgset)
+    detP <- detectionP(rgset)
+    MSet <- preprocessRaw(rgset)
+    GMset <- mapToGenome(MSet)
+    GRset <- ratioConvert(GMset, what = "beta", keepCN = TRUE)
+    # filter CpGs with SNPs
+    GRset <- dropLociWithSnps(GRset,snps = c("CpG", "SBE"))
+    # delete sex chromosome CpGs
+    annotation <- getAnnotation(GRset)
+    sex_probe <- rownames(annotation)[annotation$chr %in% c("chrX","chrY")]
+    keep <- !(featureNames(GRset) %in% sex_probe)
+    GRset <- GRset[keep,]
+    m_r <- getBeta(GRset)
+    # p>0.01 = NA
+    p.m <- detP[rownames(m_r),]
+    m <- matrix(mcmapply(function(x,y) {ifelse(x>0.01,NA,y)}, p.m, m_r, mc.cores = 50), nrow = nrow(m_r), ncol = ncol(m_r))
+    rownames(m) <- rownames(m_r)
+    colnames(m) <- colnames(m_r)
+ }
   # over
   raw.o@raw.m <- m
-  raw.o@raw.p <- as.matrix(p.m)
+  raw.o@raw.p <- p.m
   raw.o@raw.g <- rawD@GPL[match(rownames(m),rawD@GPL$Name),]
-  raw.o@beta_dtr <- list(beta_dtp(raw.o))
+
   gc()
   return(raw.o)
   
+}
+#coverage and imputation----------------------------------------------------------------------------
+imp <- function(raw.o,threshold=1){
+  if (length(raw.o@raw.p) != 0){
+    p.m <- raw.o@raw.p
+    m <- raw.o@raw.m
+    #-coverage filter-----------------------------------------------------------------------------------------------
+    idx <- pbapply(p.m,1,function(x) {sum(x < 0.01)/length(x) >= threshold})
+    p.m <- as.matrix(p.m[which(idx),])
+    m <- m[which(idx),]
+    cat("Getting: ",sum(idx),"probes","\n")
+    raw.o@raw.p <- p.m
+  }else if(any(is.na(m))){
+    idx <- pbapply(m,1,function(x) {sum(!is.na(x))/length(x) >= threshold})
+    m <- m[which(idx),]
+    cat("Getting: ",sum(idx),"probes","\n")
+  }
+  tf <- readline(prompt = "Can I carry on T/F ?(T/F)") 
+  tf <- ifelse(tf == "F", FALSE, TRUE)
+  #-imputation--------------------------------------------------------------------------------------------
+  if (tf){
+    if (any(is.na(m) & ncol(m) >= 100)){
+      library(impute)
+      print("starting impute")
+      m <- impute.knn(m,k=5)$data
+    }else{
+      print("No NA or samples < 100")
+    }
+  }else{
+    stop("over")
+  }
+  raw.o@raw.m <- m
+  raw.o@raw.g <- raw.o@raw.g[match(rownames(m),raw.o@raw.g$Name),]
+  raw.o@beta_dtr <- list(beta_dtp(raw.o))
+  print("OK")
+  return(raw.o)
 }
 
 f.qc.o <- function(raw.o,...){
@@ -131,8 +185,10 @@ if (choice == "y"){
 }else{
   stop("please input a right word:y/n")
 }
-qc.o@beta_dtr <- list(beta_dtp(qc.o,design.v))
+qc.o@beta_dtr <- list(beta_dtp(qc.o,design.v,raw.o))
 #average dups-------------------------------------------
+choice <- readline(prompt = "Remove duplicates? 0/1 ")
+if (choice == 1){
 duplicates <- table(factor(rawData@series$`individual id:ch1`))[table(factor(rawData@series$`individual id:ch1`)) > 1]
 if (length(duplicates)>=1){
   print("Dealing dups ...")
@@ -140,14 +196,15 @@ nm <- qc.o@m
 ns <- raw.o@raw.s
 for (i in names(duplicates)){
   idx <- which(rawData@series$`individual id:ch1` %in% i)
-  mean_col <- colMeans(qc.o@m[,idx])
-  nm <- cbind(nm,mean_col)
-  colnames(nm)[ncol(nm)] <- rownames(qc.o@m)[idx[1]]
+  mean_row <- rowMeans(qc.o@m[,idx])
+  nm <- cbind(nm,mean_row)
+  colnames(nm)[ncol(nm)] <- colnames(qc.o@m)[idx[1]]
   ns <- rbind(ns,raw.o@raw.s[idx[1],])
 }
 ddx <- which(rawData@series$`individual id:ch1` %in% names(duplicates))
 qc.o@m <- nm[,-ddx]
 qc.o@s <- ns[-ddx,]
+}
 }else{
   qc.o@s <- raw.o@raw.s
 }
@@ -156,9 +213,9 @@ return(qc.o)
 
 f.he.o <- function(qc.o,...){
   he.o <- new("he.o", name = paste0(GSEnumber,"_healthy"))
-  idx <- which(qc.o@s$desease == 0)
+  idx <- which(qc.o@s$disease == 0)
   he.o@m <- qc.o@m[,idx]
-  he.o@s <- qc.o@s[idx,-which(colnames(qc.o@s) == "desease")]
+  he.o@s <- qc.o@s[idx,-which(colnames(qc.o@s) == "disease")]
   return(he.o)
 }
 
@@ -224,7 +281,7 @@ setMethod("beta_dtp","raw.o",function(obj,...){
   return(fplot)
 })
 
-setMethod("beta_dtp","qc.o",function(obj,design.v,...){
+setMethod("beta_dtp","qc.o",function(obj,design.v,raw.o,...){
   density2 <- density(obj@m[which(design.v == 2),1])
   density_data <- data.frame(
     beta = density2$x,
@@ -417,9 +474,7 @@ setMethod("lm_svd","pp",function(obj,...){
 setGeneric("p_h",function(obj,...){
   standardGeneric("p_h")
 })
-setMethod("p_h","pp",function(obj,...){
-  c <- readline(prompt = "Have you dealt the duplicates? T/F")
-  if (c){
+setMethod("p_h","pp",function(obj,pic = c(24,2),...){
   fV.v <- obj@svd.o[[2]]$d^2/sum(obj@svd.o[[2]]$d^2)
   plot.new()
   name <- paste0("SVDsummary_",obj@name)
@@ -434,15 +489,15 @@ setMethod("p_h","pp",function(obj,...){
   
   # Create heat map without clustering
 #  try(heatmap.2(log10(obj@svd.o[[1]]), dendrogram = "none", Rowv = FALSE, Colv = FALSE, col = my_colors, breaks = my_breaks, key = FALSE, key.title = NA, margins = c(5,10),trace = "none",labRow = "",labCol = ""))
-  par(mar = c(4, 24, 2, 1))
+  par(mar = c(4, pic[1], 2, pic[2]))
   image(x=1:ncol(obj@svd.o[[1]]),y=1:nrow(obj@svd.o[[1]]),z=log10(t(obj@svd.o[[1]])),col=my_colors,breaks=my_breaks,xlab="",ylab="",axes=FALSE,asp=2);
   axis(1,at=1:ncol(obj@svd.o[[1]]),labels=paste("PC-",1:ncol(obj@svd.o[[1]]),sep=""),las=2)
   axis(2,at=1:nrow(obj@svd.o[[1]]),labels=rownames(obj@svd.o[[1]]),las=2)
   # Add legend
   legend("bottomright", legend = c("p<1e-50", "p<1e-15", "p<1e-5", "p<0.05", "p=ns"), fill = my_colors, bty = "o",
-         cex = 0.8,
+         cex = 0.4,
          pt.cex = 1)
-  dev.off()}
+  dev.off()
 })
 
 
