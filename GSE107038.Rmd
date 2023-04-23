@@ -117,7 +117,7 @@ CellDMC
 ```{r}
 library(EpiDISH)
 covs <- model.matrix(~qc.on@s$sentrixID)
-celldmc.o <- CellDMC(qc.on@m, qc.on@s$age ,qc.on@ctf.o[[1]], 
+celldmc.o2 <- CellDMC(qc.on@m, qc.on@s$age ,qc.on@ctf.o[[1]], 
                      cov.mod = covs, 
                      adjPMethod = "fdr",
                      adjPThresh = 0.05,
@@ -128,7 +128,7 @@ sum(dmcts[,2] != 0)
 sum(dmcts[,4] != 0) 
 sum(dmcts[,3] != 0) 
 sum(dmcts[,5] != 0) 
-coefs <- celldmc.o$coe
+coefs <- celldmc.o2$coe
 all_t <- as.data.frame(lapply(coefs, function(x) x$t))
 rownames(all_t) <- rownames(coefs$Chol)
 #FDR threshold

@@ -184,13 +184,13 @@ ageORD.v[s$age>40 & s,$age <=60] <- 1
 ageORD.v[s$age > 60] <- 2
 
 library(EpiDISH)
-covs <- model.matrix(~ sex + bmi, data = he.o@s)
+covs <- model.matrix(~ sex + t2d + bmi, data = he.o@s)
 celldmc.o <- CellDMC(he.o@m, he.o@s$age ,he.o@ctf.o[[1]], 
-                     cov.mod = NULL, 
+                     cov.mod = covs, 
                      adjPMethod = "fdr",
                      adjPThresh = 0.05,
                      sort = FALSE,
-                     mc.cores = 40)
+                     mc.cores = 100)
 dmcts<- celldmc.o$dmct
 sum(dmcts[,2] != 0) # Chol:62329
 sum(dmcts[,4] != 0) # Hep 42596
