@@ -16,9 +16,9 @@ source("~/code/Dmathy/Damthy.R")
 ```
 
 ```{r data}
-load("~/data/eGTEX/GPL21145/annoEPICv1B4.Rd")
+load("~/data/infinium/GPL21145/annoEPICv1B4.Rd")
 load("~/data/eGTEX/GSE180474/RData/GSE180474_MatrixProcessed.csv")
-GPL <- 
+GPL <- as.data.frame(annoEPICv1B4.m)
 m_pval <- 
 ```
 
@@ -177,14 +177,14 @@ dev.off()
 4.  CellDMC
 
 ```{r}
-# young middle and old
-ageORD.v <- s$age
-ageORD.v[s$age<=40] <- 0
-ageORD.v[s$age>40 & s,$age <=60] <- 1
-ageORD.v[s$age > 60] <- 2
+# # young middle and old
+# ageORD.v <- s$age
+# ageORD.v[s$age<=40] <- 0
+# ageORD.v[s$age>40 & s$age <=60] <- 1
+# ageORD.v[s$age > 60] <- 2
 
 library(EpiDISH)
-covs <- model.matrix(~ sex + t2d + bmi, data = he.o@s)
+covs <- model.matrix(~ sex + t2d, data = he.o@s)
 celldmc.o <- CellDMC(he.o@m, he.o@s$age ,he.o@ctf.o[[1]], 
                      cov.mod = covs, 
                      adjPMethod = "fdr",
@@ -217,43 +217,19 @@ abline(h = -fdr_threshold_Hep, lty = 2, col = "blue")
 dev.off()
 ```
 
-5.  Remove t2d samples and then run CellDMC
+5.  Manhattan map
 
 ```{r}
-idx <- which(he.o@s$t2d == 0)
-he_t2.o <- new("he.o")
-he_t2.o@m <- he.o@m[,idx]
-he_t2.o@s <- he.o@s[idx,]
-he_t2.o@ctf.o <- CTF(he_t2.o,mrefLiver.m)
-covs <- model.matrix(~ sex + bmi, data = he_t2.o@s)
-celldmc.o <- CellDMC(he_t2.o@m, he_t2.o@s$age ,he_t2.o@ctf.o[[1]], 
-                     cov.mod = covs, 
-                     adjPMethod = "fdr",
-                     adjPThresh = 0.05,
-                     sort = FALSE,
-                     mc.cores = 40)
-dmcts<- celldmc.o$dmct
-sum(dmcts[,2] != 0) # Chol:6225
-sum(dmcts[,4] != 0) # Hep 1603
-sum(dmcts[,3] != 0) # EC 79
-sum(dmcts[,5] != 0) # Kup 0
-sum(dmcts[,5] != 0) #Lym 0
-coefs <- celldmc.o$coe
-all_t <- as.data.frame(lapply(coefs, function(x) x$t))
-rownames(all_t) <- rownames(coefs$Chol)
-#FDR threshold
-fdr_threshold_Chol<- min(abs(coefs$Chol$t[sapply(coefs$Chol$adjP, function(x) {x<=0.05})]))
-fdr_threshold_Hep <- min(abs(coefs$Hep$t[sapply(coefs$Hep$adjP, function(x) {x<=0.05})]))
-pdf("DMCTs_nt2d.pdf", width=6,height=6)
-smoothScatter(all_t[, "Chol"], all_t[, "Hep"], xlab = "t -stat. (CellDMC:Chol)", 
-              ylab = "t -stat. (CellDMC:Hep)", 
-              xlim = c(-7,7), ylim = c(-7,7), cex = 1.5, 
-              main = "CT specific age-DMCs predicted by CellDMC")
-abline(v = 0, lty = 2, col = "black")
-abline(h = 0, lty = 2, col = "black")
-abline(v = fdr_threshold_Chol, lty = 2, col = "blue")
-abline(v = -fdr_threshold_Chol, lty = 2, col = "blue")
-abline(h = fdr_threshold_Hep, lty = 2, col = "blue")
-abline(h = -fdr_threshold_Hep, lty = 2, col = "blue")
-dev.off()
+idx <- match(rownames(he.o@m),GPL[,1])
+chr <- as.numeric(GPL$CHR[idx])
+cpg <- rownames(he.o@m)
+bp <- unlist(sapply(table(chr),function(x) seq(1,x)))
+p_h <- coefs$Hep$adjP
+p_ch<- coefs$Chol$adjP
+
+h_q <- data.frame(cpg,chr,bp,p_h)
+ch_q <- data.frame(cpg,chr,bp,p_ch)
+
+library(qqman)
+manhattan(h_q, chr="chr", bp="bp", snp="cpg", p="p_h",annotatePval=0.05)
 ```

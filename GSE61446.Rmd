@@ -18,11 +18,11 @@ library(minfi)
 
 ```{r}
 library(data.table)
-series <- t(fread("~/data/infinium/liver_sample/fat_liver/GSE61454/series.txt",header = F))
+series <- t(fread("~/data/infinium/liver_sample/67_obese_livers/GSE61446/series.txt",header = F))
 colnames(series) <- series[1,]
 series <- series[-1,]
 GPL <- fread("~/data/infinium/GPL13534/GPL13534-11288.txt", sep = "\t", header = T)
-rgset <- read.metharray.exp("~/data/infinium/liver_sample/fat_liver/GSE61454/idat")
+rgset <- read.metharray.exp("~/data/infinium/liver_sample/67_obese_livers/GSE61446/idat")
 rawDat <- f.rawD(GPL = GPL,rgset = rgset,series = series)
 raw.o <- f.raw.o(rawDat)
 # coverage

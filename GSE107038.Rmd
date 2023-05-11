@@ -23,8 +23,6 @@ library(data.table)
 GPL <- fread("~/data/infinium/GPL13534/GPL13534-11288.txt", sep = "\t", header = T)
 rawDat <- f.rawD(GPL = GPL,rgset = rgset,series = series)
 raw.o <- f.raw.o(rawDat)
-
-
 ```
 
 annotation
