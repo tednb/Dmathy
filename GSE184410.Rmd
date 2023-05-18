@@ -1,0 +1,67 @@
+---
+title: "GSE184410"
+output:
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+knitr::opts_knit$set(root.dir = "/mnt/local-disk/data/guoxiaolong/Renv")
+```
+
+probes annotation
+
+```{r}
+library(data.table)
+GPL <- fread("~/data/infinium/GPL30650/GPL30650-200191.txt",header = T)
+GPL$Infinium_Design_Type <- rep(NA,nrow(GPL))
+idx <- which(is.na(GPL$`SEQUENCE B`)) # type 2
+GPL$Infinium_Design_Type[idx] <- "II"
+idx <- which(!is.na(GPL$`SEQUENCE B`))
+GPL$Infinium_Design_Type[idx] <- "I" # type 1
+idx <- which(is.na(GPL$`SEQUENCE A`))
+GPL$Infinium_Design_Type[idx] <- NA # unknown
+save(GPL,file = "GPL30650.Rdata")
+
+GPL <- fread("~/data/infinium/GPL30650/MM285.mm10.manifest.tsv",header = T)
+colnames(GPL)[9] <- "Name"
+colnames(GPL)[1] <- "chr"
+colnames(GPL)[28] <- "Infinium_Design_Type"
+#mask <- fread("~/data/infinium/MM285/MM285.mm10.mask.tsv",header = T)
+#design <- fread("~/data/infinium/MM285/MM285.design.tsv",header = T)
+```
+
+sample information
+
+```{r}
+load("~/data/infinium/MM285/Rdata/GSE184410_norph.Rdata")
+```
+
+```{r}
+source("~/code/Dmathy/Damthy.R")
+```
+
+beta matrix
+
+```{r}
+m <- fread("~/data/infinium/MM285/GSE184410_20210916_GEO_processed_matrix.csv",header = T)
+rawDt <- f.rawD(m_pval = m,GPL = GPL,series = pheno.df)
+raw.o <- f.raw.o(rawDt) # p cut-off = 0.05
+# 662 normal tissues * 262781 CpGs   with age info
+idx<-match(rownames(pheno.df),colnames(raw.o@raw.m))
+raw.o@raw.m <- raw.o@raw.m[,idx]
+raw.o@raw.p <- raw.o@raw.p[,idx]
+raw.o@raw.s <- pheno.df
+coverage(raw.o,cutoff = 0.05)
+raw.o <- imp(raw.o,cutoff = 0.05)
+raw.o@beta_dtr <- list(beta_dtp(raw.o))
+```
+
+qc.o
+
+```{r}
+qc.o <- f.qc.o(raw.o)
+qc.o@beta_dtr <- list(beta_dtp(qc.o))
+```

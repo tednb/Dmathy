@@ -1,0 +1,171 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+knitr::opts_knit$set(root.dir = "/mnt/local-disk/data/guoxiaolong/Renv")
+```
+
+```{r data}
+library(EpiDISH)
+load("~/data/infinium/liver_sample/341_liver_samples/RData/GSE180474_he.Rd")
+load("~/data/infinium/liver_sample/40_normal_liver_samples/GSE107038_qc.Rd")
+load("~/data/infinium/liver_sample/combine_64_he_samples/107038+61258.Rd")
+load("~/data/infinium/liver_sample/79_livers(25_healthy)/GSE61258/GSE61258_qc.Rd")
+load("~/data/infinium/liver_sample/67_obese_livers/GSE61446/GSE61446_qc.Rd")
+source("~/code/Dmathy/Damthy.R")
+```
+
+```{r CellDMC:discovery}
+covs <- model.matrix(~ sex + t2d, data = he.o@s)
+celldmc.o <- CellDMC(he.o@m, he.o@s$age ,he.o@ctf.o[[1]], 
+                     cov.mod = covs, 
+                     adjPMethod = "fdr",
+                     adjPThresh = 0.05,
+                     sort = FALSE,
+                     mc.cores = 100)
+coefs <- celldmc.o$coe
+all_t <- as.data.frame(lapply(coefs, function(x) x$t))
+rownames(all_t) <- rownames(coefs$Chol)
+ex_c <- coefs
+ex_t <- all_t
+fdr_threshold_ex_h<- min(abs(ex_t$Hep[sapply(ex_c$Hep$adjP, function(x) {x<=0.05})]))
+fdr_threshold_ex_ch<- min(abs(ex_t$Chol[sapply(ex_c$Chol$adjP, function(x) {x<=0.05})]))
+threshold_va <- 1.96
+```
+
+------------------------------------------------------------------------
+
+```{r CellDMC:validation 1:40}
+covs <- model.matrix(~qc_107038.o@s$sentrixID)
+celldmc.o1 <- CellDMC(qc_107038.o@m, qc_107038.o@s$age ,qc_107038.o@ctf.o[[1]], 
+                     cov.mod = covs, 
+                     adjPMethod = "fdr",
+                     adjPThresh = 0.05, 
+                     sort = FALSE,
+                     mc.cores = 100)
+coefs <- celldmc.o1$coe
+all_t <- as.data.frame(lapply(coefs, function(x) x$t))
+rownames(all_t) <- rownames(coefs$Chol)
+va_t <- all_t
+va_c <- coefs
+```
+
+```{r CellDMC:validation 2:67}
+celldmc.o2 <- CellDMC(qc.o@m, qc.o@s$age ,qc.o@ctf.o[[1]], 
+                     cov.mod = NULL, 
+                     adjPMethod = "fdr",
+                     adjPThresh = 0.05,
+                     sort = FALSE,
+                     mc.cores = 100)
+coefs <- celldmc.o2$coe
+all_t <- as.data.frame(lapply(coefs, function(x) x$t))
+rownames(all_t) <- rownames(coefs$Chol)
+va_t <- all_t
+va_c <- coefs
+```
+
+```{r CellDMC:validation 3:79}
+covs <- model.matrix(~ sex + disease + bmi, data = qc.o@s)
+celldmc.o3 <- CellDMC(qc.o@m, qc.o@s$age ,qc.o@ctf.o[[1]], 
+                     cov.mod = covs, 
+                     adjPMethod = "fdr",
+                     adjPThresh = 0.05,
+                     sort = FALSE,
+                     mc.cores = 100)
+coefs <- celldmc.o3$coe
+all_t <- as.data.frame(lapply(coefs, function(x) x$t))
+rownames(all_t) <- rownames(coefs$Chol)
+va_t <- all_t
+va_c <- coefs
+```
+
+```{r CellDMC:validation 4:64}
+covs <- model.matrix(~qc.on@s$sentrixID)
+celldmc.o4 <- CellDMC(qc.on@m, qc.on@s$age ,qc.on@ctf.o[[1]], 
+                     cov.mod = covs, 
+                     adjPMethod = "fdr",
+                     adjPThresh = 0.05,
+                     sort = FALSE,
+                     mc.cores = 100)
+coefs <- celldmc.o4$coe
+all_t <- as.data.frame(lapply(coefs, function(x) x$t))
+rownames(all_t) <- rownames(coefs$Chol)
+va_t <- all_t
+va_c <- coefs
+```
+
+------------------------------------------------------------------------
+
+```{r input}
+idx <- match(rownames(va_t),rownames(ex_t))
+idx <- idx[complete.cases(idx)]
+
+ex <- ex_t[idx,]
+idx <- match(rownames(ex),rownames(va_t))
+va <- va_t[idx,]
+if(all(rownames(va) == rownames(ex))){
+hep <- data.frame(ex$Hep,va$Hep)
+chol <- data.frame(ex$Chol,va$Chol)
+}
+```
+
+```{r fisher exact test}
+fet <- function(x){
+n1 <- sum(x$ex >= fdr_threshold_ex_h & x$va >= threshold_va)
+n2 <- sum(x$ex <= -fdr_threshold_ex_h & x$va >= threshold_va)
+n3 <- sum(x$ex <= -fdr_threshold_ex_h & x$va <= -threshold_va)
+n4 <- sum(x$ex >= fdr_threshold_ex_h & x$va <= -threshold_va)
+m_f <- matrix(c(n1,n2,n4,n3),ncol = 2,byrow = TRUE)
+re <- fisher.test(m_f,alternative = "greater")
+return(list(re, m_f))
+}
+# Hep
+re_h <- fet(hep)
+m_h <- re_h[[2]]
+OR_h <- format(re_h[[1]]$estimate,digits = 2)
+pval_h <- format(re_h[[1]]$p.value,digits = 1)
+# Chol
+re_ch <- fet(chol)
+m_ch <- re_ch[[2]]
+OR_ch <- format(re_ch[[1]]$estimate,digits = 2)
+pval_ch <- format(re_ch[[1]]$p.value,digits = 1)
+```
+
+```{r figure}
+pdf("vali_64.pdf", width=12,height=6)
+par(mfrow=c(1,2),mar=c(4,4,4,4))
+smoothScatter(hep$ex.Hep, hep$va.Hep, xlab = " t(Hep:DiscoverySet)", 
+              ylab = "t(Hep:Validation Set)", 
+              xlim = c(-7,7), ylim = c(-7,7), cex = 1.5, 
+              main = "Validation plot of age-DMCTs of Hepatocyte")
+abline(v = 0, lty = 2, col = "black")
+abline(h = 0, lty = 2, col = "black")
+abline(v = fdr_threshold_ex_h, lty = 2, col = "blue")
+abline(v = -fdr_threshold_ex_h, lty = 2, col = "blue")
+abline(h = threshold_va, lty = 2, col = "blue")
+abline(h = -threshold_va, lty = 2, col = "blue")
+text(-6.5, 6.7, paste0("OR = ",OR_h),cex = 1,adj=c(0, 0))
+text(-6.5, 6, paste0("p = ",pval_h),cex = 1,adj=c(0, 0))
+
+text(-4.5,3.5,m_h[1,2],cex = 0.7,adj=c(0, 0),col = "red")
+text(4.5,-3.5,m_h[2,1],cex = 0.7,adj=c(0, 0),col = "red")
+
+text(5.5,4.5,m_h[1,1],cex = 0.7,adj=c(0, 0),col = "red")
+text(-5.5,-4.5,m_h[2,2],cex = 0.7,adj=c(0, 0),col = "red")
+smoothScatter(chol$ex.Chol, chol$va.Chol, xlab = " t(Chol:DiscoverySet)", 
+              ylab = "t(Chol:Validation Set)", 
+              xlim = c(-7,7), ylim = c(-7,7), cex = 1.5, 
+              main = "Validation plot of age-DMCTs of Cholangiocyte")
+abline(v = 0, lty = 2, col = "black")
+abline(h = 0, lty = 2, col = "black")
+abline(v = fdr_threshold_ex_ch, lty = 2, col = "blue")
+abline(v = -fdr_threshold_ex_ch, lty = 2, col = "blue")
+abline(h = threshold_va, lty = 2, col = "blue")
+abline(h = -threshold_va, lty = 2, col = "blue")
+text(-6.5, 6.7, paste0("OR = ",OR_ch),cex = 1,adj=c(0, 0))
+text(-6.5, 6, paste0("p = ",pval_ch),cex = 1,adj=c(0, 0))
+
+text(-4.5,3.5,m_ch[1,2],cex = 0.7,adj=c(0, 0),col = "red")
+text(4.5,-3.5,m_ch[2,1],cex = 0.7,adj=c(0, 0),col = "red")
+text(5.5,4.5,m_ch[1,1],cex = 0.7,adj=c(0, 0),col = "red")
+text(-5.5,-4.5,m_ch[2,2],cex = 0.7,adj=c(0, 0),col = "red")
+dev.off()
+```
