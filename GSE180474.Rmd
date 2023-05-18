@@ -72,7 +72,7 @@ dev.off()
 
 ```
 
-3.  beta \~ CTF + age
+3.  beta \~ CTF + age + sex + t2d
 
 ```{r}
 library(qvalue)
@@ -197,6 +197,28 @@ sum(dmcts[,4] != 0) # Hep 42596
 sum(dmcts[,3] != 0) # EC 54
 sum(dmcts[,5] != 0) # Kup 0
 sum(dmcts[,5] != 0) #Lym 0
+# Draw barplot for dmcts
+require(ggplot2)
+require(tidyr)
+dmct_hc <- dmcts[dmcts$DMC==1,]
+dmct_hc <- dmct_hc[,-1]
+df_long <- gather(dmct_hc, key = "Cell_Type", value = "Value")
+require(dplyr)
+df_counts <- df_long %>% 
+  group_by(Cell_Type, Value) %>% 
+  summarise(Counts = sum(Value == 1 | Value == -1)
+df_counts <- 
+# 绘制柱状图
+pdf(file = "bar_adcs.pdf",width = 6,height = 4)
+ggplot(df_counts, aes(x = Cell_Type, y = Counts, fill = factor(Value))) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_text(aes(label = Counts, y = Counts + 0.5*sign(Counts),
+                group = Value), position = position_dodge(width = 0.9)) +
+  labs(x = "Cell Types", y = "Count")+
+  scale_fill_discrete(labels=c("hypo","hyper")) +
+  theme(legend.title=element_blank())+
+   ggtitle("Cell type specific age-DMCs")
+dev.off()
 coefs <- celldmc.o$coe
 all_t <- as.data.frame(lapply(coefs, function(x) x$t))
 rownames(all_t) <- rownames(coefs$Chol)
@@ -220,6 +242,7 @@ dev.off()
 5.  Manhattan map
 
 ```{r}
+# Get the expression values for the genes on the GPL
 idx <- match(rownames(he.o@m),GPL[,1])
 chr <- as.numeric(GPL$CHR[idx])
 cpg <- rownames(he.o@m)
