@@ -50,7 +50,6 @@ age_pre <- validate(testset,clocks)
 2.  Validation: Bulk
 
 ```{r}
-pre <- function()
 # GSE107038: 40
 load("~/data/infinium/liver_sample/40_normal_liver_samples/GSE107038_qc.Rd")
 pip_pre(qc_107038.o,trainset,dmct_hc)
@@ -73,7 +72,7 @@ MAE <- median(abs(age_pre[[i]][,1]-age))
 # Output PDF files for this cell type
 pdf(paste0(cell," GSE61258.pdf"))
 # Plot the predicted age and real age with a 45 degree dashed line and a mark of correlation and RMSE
-plot(age_pre[[i]][,1],age,col=disease,pch=19,xlab="Chronological age (years)",ylab = "Predicted age (years)",xlim = c(10,80),ylim = c(10,80),,main = paste("Predict",cell,"age","by",cell,"clock",sep = " "))
+plot(age,age_pre[[i]][,1],col=disease,pch=19,xlab="Chronological age (years)",ylab = "Predicted age (years)",xlim = c(10,80),ylim = c(10,80),main = paste0(cell," clock"))
 abline(0,1,lty = 2)
 text(20,40,paste0("r = ",format(cor, digits = 3),"\n","p = ",format(p, digits = 1),"\n","MedAE: ",format(MAE, digits = 2),"years"))
 # ADD a legend for the color
@@ -83,13 +82,83 @@ dev.off()
 }
 # BUILD-UP SAMPLE
 load("~/data/infinium/liver_sample/combine_64_he_samples/107038+61258.Rd")
-pip_pre(qc.on,trainset,dmct_hc)
+age_pre <- pip_pre(qc.on,trainset,dmct_hc)
 ```
 
 3.  Validation: Sort
 
 ```{r}
 load("~/data/infinium/liver_sample/AA_hepatocytes/GSE123995_qc.Rd")
-qc.o@name <- "hep"
-validate(qc.o,clocks,dmct_hc)
+age_pre <- pip_pre(qc.o,trainset,dmct_hc)
+```
+
+4.  benchmarking
+
+```{r}
+all_c <- rep(1,nrow(he.o@m))
+# Build a data frame with only 1 column using all_c and using the same rownames as he.o@m
+dmct_ben <- data.frame(all_c, row.names = rownames(he.o@m))
+colnames(dmct_ben) <- "all"
+clocks_ben <- clock(trainset,dmct_ben)
+age_pre <- validate(testset,clocks_ben)
+
+pip_pre(qc_107038.o,trainset,dmct_ben)
+load("~/data/infinium/liver_sample/67_obese_livers/GSE61446/GSE61446_qc.Rd")
+pip_pre(qc.o,trainset,dmct_ben)
+
+load("~/data/infinium/liver_sample/79_livers(25_healthy)/GSE61258/GSE61258_qc.Rd")
+disease <- as.factor(qc.o@s$disease)
+age <- qc.o@s$age
+age_pre <- pip_pre(qc.o,trainset,dmct_ben)
+
+# There are 6 levels of disease: 0,1,2,3,4,5, which represent Healthy,HealthyObese,NAFLD,PBC,PSC and NASH.
+# NOW we plot scatterplot for age_pre against age_t and color the points by disease.
+for (i in 1:length(age_pre)){
+cell <- names(age_pre)[[i]]
+cor <- cor(age_pre[[i]][,1],age,method = "pearson")
+p <- cor.test(age_pre[[i]][,1],age)$p.value
+MAE <- median(abs(age_pre[[i]][,1]-age))
+# Output PDF files for this cell type
+pdf(paste0(cell," GSE61258.pdf"))
+# Plot the predicted age and real age with a 45 degree dashed line and a mark of correlation and RMSE
+plot(age,age_pre[[i]][,1],col=disease,pch=19,xlab="Chronological age (years)",ylab = "Predicted age (years)",xlim = c(10,80),ylim = c(10,80),main = paste0(cell," clock"))
+abline(0,1,lty = 2)
+text(20,40,paste0("r = ",format(cor, digits = 3),"\n","p = ",format(p, digits = 1),"\n","MedAE: ",format(MAE, digits = 2),"years"))
+# ADD a legend for the color
+legend("topleft",legend = c("Healthy","HealthyObese","NAFLD","PBC","PSC","NASH")
+       ,col = c(1,2,3,4,5,6),pch = 19)
+dev.off()
+}
+# BUILD-UP SAMPLE
+load("~/data/infinium/liver_sample/combine_64_he_samples/107038+61258.Rd")
+age_pre <- pip_pre(qc.on,trainset,dmct_ben)
+
+load("~/data/infinium/liver_sample/AA_hepatocytes/GSE123995_qc.Rd")
+age_pre <- pip_pre(qc.o,trainset,dmct_ben)
+```
+
+5.  Validating on CD4T and CD8T: GSE71955
+
+```{r}
+library(EpiDISH)
+BloodFrac.m <- epidish(beta.m = cd4_qc.o@m, ref.m = centDHSbloodDMC.m, method = "RPC")$estF
+cd4_qc.o@ctf.o <- list(BloodFrac.m,boxplot(BloodFrac.m))
+BloodFrac.m <- epidish(beta.m = cd8_qc.o@m, ref.m = centDHSbloodDMC.m, method = "RPC")$estF
+cd8_qc.o@ctf.o <- list(BloodFrac.m,boxplot(BloodFrac.m))
+save(cd4_qc.o,file = "CD4_qc.Rd")
+save(cd8_qc.o,file = "CD8_qc.Rd")
+
+age_pre <- pip_pre(cd4_qc.o,trainset,dmct_hc)
+age_pre <- pip_pre(cd8_qc.o,trainset,dmct_hc)
+```
+
+6.  Validating on kidney , colon and prostate
+
+```{r}
+# kidney
+age_pre <- pip_pre(qc.o,trainset,dmct_hc)
+# prostate
+age_pre <- pip_pre(hey.o,trainset,dmct_hc)
+# colon
+age_pre <- pip_pre(he.o,trainset,dmct_hc)
 ```

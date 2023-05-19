@@ -1,0 +1,25 @@
+---
+title: "GSE180474"
+output:
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+knitr::opts_knit$set(root.dir = "/mnt/local-disk/data/guoxiaolong/Renv")
+```
+
+```{r packages}
+source("~/code/Dmathy/Damthy.R")
+```
+
+```{r data}
+load("~/data/infinium/eGTEX/GSE213478_matrix.RData")
+load("~/data/infinium/eGTEX/GSE213478_series.RData")
+```
+
+```{r tidy}
+GSE213478_series.lv
+```

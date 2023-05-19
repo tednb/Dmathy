@@ -135,18 +135,23 @@ setMethod("validate","test",function(obj,clocks,...){
       # Output PDF files for each cell type
       pdf(paste0(cell," clock for dataset"," ",obj@GSE,".pdf"))
       # Plot the predicted age and real age with a 45 degree dashed line and a mark of correlation and RMSE
-      plot(age_pre[[cell]],age_te,pch = 16,col = "blue",ylab = paste0(cell_all," age (years)"),xlab = "Chronological age (years)",main = paste0(cell_all," clock for dataset"," ",obj@GSE),xlim = c(10,80),ylim = c(10,80))
+      plot(age_te,age_pre[[cell]],pch = 16,col = "blue",ylab = paste0(cell_all," age (years)"),xlab = "Chronological age (years)",main = paste0(cell_all," clock for dataset"," ",obj@GSE),xlim = c(30,95),ylim = c(30,95))
       abline(0,1,lty = 2)
-      text(20,75,paste0("r = ",format(r, digits = 3),"\n","p = ",format(p, digits = 1),"\n","MedAE: ",format(MAE, digits = 2),"years"))
+      text(40,90,paste0("r = ",format(r, digits = 3),"\n","p = ",format(p, digits = 1),"\n","MedAE: ",format(MAE, digits = 2),"years"))
       # Add a linear model line, black and solid.
       #abline(fit,col = "black",lwd = 2)
       dev.off()
     }
     return(age_pre)
   }else if(grepl("sorted",obj@GSE)){
+  }else if(grepl("sorted",obj@GSE)){
     # Using specific clock to predict the age of this kind of sorted sample
     if (grepl("hep",obj@GSE)){
+    if (grepl("hep",obj@GSE)){
       cell_type <- "Hep"}
+    if (grepl("all",obj@GSE)){
+      cell_type <- "all"
+    }
     if(cell_type == "Hep"){
       cell_all <- "Hepatocyte"
     }else if (cell_type == "Chol") {
@@ -155,17 +160,21 @@ setMethod("validate","test",function(obj,clocks,...){
       cell_all <- cell_type
     }
     idx <- match(clocks[[cell_type]]$beta@Dimnames[[1]],rownames(m_te))
+    idx <- match(clocks[[cell_type]]$beta@Dimnames[[1]],rownames(m_te))
     idx <- idx[!is.na(idx)]
     age_pre <- predict(clocks[[cell_type]],newx = t(m_te[idx,]))
+    cor <- cor(age_pre,age_te,method = "pearson")
+    p <- cor.test(age_pre,age_te)$p.value
+    MAE <- median(abs(age_pre-age_te))
     cor <- cor(age_pre,age_te,method = "pearson")
     p <- cor.test(age_pre,age_te)$p.value
     MAE <- median(abs(age_pre-age_te))
     # Output PDF files for this cell type
     pdf(paste0(cell_type,"_sorted_predict.pdf"))
     # Plot the predicted age and real age with a 45 degree dashed line and a mark of correlation and RMSE
-    plot(age_pre,age_te,pch = 16,col = "black",ylab = paste0(cell_all," age (years)"),xlab = "Chronological age (years)",main = paste("Predict",cell_all,"age","by",cell_all,"clock",sep = " "),xlim = c(10,80),ylim = c(10,80))
+    plot(age_te,age_te_pre,pch = 16,col = "black",ylab = paste0(cell_all," age (years)"),xlab = "Chronological age (years)",main = paste("Predict",cell_all,"age","by",cell_all,"clock",sep = " "),xlim = c(30,95),ylim = c(30,95))
     abline(0,1,lty = 2)
-    text(20,75,paste0("r = ",format(cor, digits = 3),"\n","p = ",format(p, digits = 1),"\n","MedAE: ",format(MAE, digits = 2),"years"))
+    text(40,90,paste0("r = ",format(cor, digits = 3),"\n","p = ",format(p, digits = 1),"\n","MedAE: ",format(MAE, digits = 2),"years"))
     dev.off()
   }
 })

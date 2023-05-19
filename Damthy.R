@@ -10,7 +10,7 @@ library(data.table)
 library(pbapply)
 
 ## ----intialize------------------------------------------------------
-GSEnumber <- readline(prompt = "What's the GSE number you are analyzing? ")
+#GSEnumber <- readline(prompt = "What's the GSE number you are analyzing? ")
 
 
 ## ----create class structure-----------------------------------------
@@ -89,17 +89,20 @@ f.raw.o <- function(rawD,...){
   rownames(DNAm.beta) <- rawD@m_pval[, 1]
   cho <- readline(prompt = "do you want to use minfi to process it? T/F")
   if(cho){
-  require(minfiData)
+  #require(minfiData)
   require(minfi)
   #-probe qc----------------------------------------------------------------------------------------------
-  GRset =makeGenomicRatioSetFromMatrix(DNAm.beta,array ="IlluminaHumanMethylationEPIC",annotation = "ilm10b4.hg19") #  
+  GRset =makeGenomicRatioSetFromMatrix(DNAm.beta) #  ,array ="IlluminaHumanMethylationEPIC",annotation = "ilm10b4.hg19"
   # delete sex chromosome CpGs ###
   annotation <- getAnnotation(GRset)
   sex_probe <- rownames(annotation)[annotation$chr %in% c("chrX","chrY")]
   keep <- !(featureNames(GRset) %in% sex_probe)
   GRset <- GRset[keep,]
   m <- getBeta(GRset)
-  p.m <- DNAm.Pval[rownames(m),]  # filter CpGs with SNPs
+  p.m <- as.matrix(DNAm.Pval[rownames(m),]) # filter CpGs with SNPs
+  if(any(is.na(p.m))){
+    p.m[is.na(p.m)] <- 1
+  }
   GRset <- dropLociWithSnps(GRset,snps = c("CpG", "SBE"))
   }else{
     # delete sex chromosome CpGs ###
@@ -173,11 +176,10 @@ imp <- function(raw.o,cutoff=0.01){
   tf <- ifelse(tf == "F", FALSE, TRUE)
   if(tf){
     thre <- readline(prompt = "what's the threshold for sample ?")
-    idx <- pbapply(p.m,2,function(x) {sum(!is.na(x))/length(x) >= thre})
+    idx <- pbapply(m,2,function(x) {sum(!is.na(x))/length(x) >= thre})
     m <- m[,idx]
     cat("Getting: ",sum(idx),"samples","\n")
     raw.o@raw.m <- m
-    raw.o@raw.p <- p.m
     raw.o@raw.s <- s[idx,]
     coverage(raw.o,cutoff)
     
@@ -202,7 +204,7 @@ imp <- function(raw.o,cutoff=0.01){
   }else{
     stop("over")
   }
-  raw.o@raw.m <- m
+    raw.o@raw.m <- m
   raw.o@raw.g <- raw.o@raw.g[match(rownames(m),raw.o@raw.g$Name),]
   print("OK")
   return(raw.o)
