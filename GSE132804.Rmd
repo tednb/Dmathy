@@ -1,0 +1,236 @@
+---
+title: "GSE123995"
+output:
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+knitr::opts_knit$set(root.dir = "/mnt/local-disk/data/guoxiaolong/Renv")
+```
+
+```{r packages}
+source("~/code/Dmathy/Damthy.R")
+```
+
+```{r idat}
+library(minfi)
+rgset_epic <- read.metharray.exp("~/data/infinium/colon/GSE132804/IDAT_EPIC/",force=TRUE)
+rgset_450k <- read.metharray.exp("~/data/infinium/colon/GSE132804/IDAT_450/")
+load("~/data/infinium/GPL_files/GPL21145/annoEPICv1B4.Rd")
+#load("~/data/infinium/AA_hepatocytes/GSE123995_mat.Rd")
+GPL_epic <- as.data.frame(annoEPICv1B4.m)
+GPL_450 <- fread("~/data/infinium/GPL_files/GPL13534/GPL13534-11288.txt", sep = "\t", header = T)
+rawDat_epic <- f.rawD(GPL = GPL_epic,rgset = rgset_epic,series = series_epic)
+rawDat_450 <- f.rawD(GPL = GPL_450,rgset = rgset_450k,series = series_450)
+```
+
+```{r raw.o}
+raw_epic.o <- f.raw.o(rawDat_epic)
+raw_epic.o@raw.s <- series_epic
+coverage(raw.o=raw_epic.o) # 
+raw_epic.o <- imp(raw_epic.o) # 1
+raw_epic.o@beta_dtr <- beta_dtp(raw_epic.o)
+
+raw_450.o <- f.raw.o(rawDat_450)
+raw_450.o@raw.s <- series_450
+coverage(raw_450.o) # 
+raw_450.o <- imp(raw_450.o) # 1
+raw_450.o@beta_dtr <- beta_dtp(raw_450.o)
+```
+
+```{r}
+library(EpiSCORE)
+qc_epic.o <- f.qc.o(raw_epic.o)
+qc_epic.o@ctf.o <- CTF(qc_epic.o,Colon_Mref.m)
+qc_epic.o@svd.o <- lm_svd(qc_epic.o)
+p_h(qc_epic.o,pic = c(20,5))
+
+qc_450.o <- f.qc.o(raw_450.o)
+qc_450.o@ctf.o <- CTF(qc_450.o,Colon_Mref.m)
+qc_450.o@svd.o <- lm_svd(qc_450.o)
+p_h(qc_450.o,pic = c(26,5))
+```
+
+Remove high risk in epic data
+
+```{r}
+idx <- which(qc_epic.o@s$risk != "High")
+qc_he.o <- new("qc.o")
+qc_he.o@m <- qc_epic.o@m[,idx]
+qc_he.o@s <- qc_epic.o@s[idx,]
+pdf("ctf.pdf")
+qc_he.o@ctf.o <- CTF(qc_he.o,Colon_Mref.m)
+dev.off()
+qc_he.o@svd.o <- lm_svd(qc_he.o)
+p_h(qc_he.o,pic = c(23,5))
+celldmc_he.o <- CellDMC(qc_he.o@m, qc_he.o@s$age ,qc_he.o@ctf.o[[1]], 
+                     cov.mod = NULL, 
+                     adjPMethod = "fdr",
+                     adjPThresh = 0.05,
+                     sort = FALSE,
+                     mc.cores = 100)
+dmcts_he<- celldmc_he.o$dmct
+```
+
+```{r CellDMC}
+library(EpiDISH)
+covs <- model.matrix(~ sentrixPOS + risk, data = qc_epic.o@s)
+celldmc_epic.o <- CellDMC(qc_epic.o@m, qc_epic.o@s$age ,qc_epic.o@ctf.o[[1]], 
+                     cov.mod = covs, 
+                     adjPMethod = "fdr",
+                     adjPThresh = 0.05,
+                     sort = FALSE,
+                     mc.cores = 100)
+dmcts_epic<- celldmc_epic.o$dmct
+```
+
+```{r bar plot}
+require(ggplot2)
+require(tidyr)
+dmcts <- as.data.frame(dmcts_epic)
+dmct_hc <- dmcts[dmcts$DMC==1,]
+dmct_hc <- dmct_hc[,-1]
+df_long <- gather(dmct_hc, key = "Cell_Type", value = "Value")
+require(dplyr)
+df_counts <- df_long %>% group_by(Cell_Type, Value) %>% summarise(Counts = sum(Value == 1 | Value == -1))
+df_counts <- df_counts[-c(2,5,8,11),]
+df_counts$Value[9] <- 1
+# 绘制柱状图
+pdf(file = "bar_adcs.pdf",width = 6,height = 4)
+p_bar <- ggplot(df_counts, aes(x = Cell_Type, y = Counts, fill = factor(Value))) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_text(aes(label = Counts, y = Counts + 0.5*sign(Counts),
+                group = Value), position = position_dodge(width = 0.9)) +
+  labs(x = "Cell Types", y = "Count")+
+  scale_fill_discrete(labels=c("hypo","hyper")) +
+  theme(legend.title=element_blank())+
+   ggtitle("CellDMC prediction (n=206)")+  
+  theme(panel.background = element_rect(fill = "white", colour = "black"),axis.text=element_text(size=17,face="bold"),
+        axis.title=element_text(size=20),
+        title=element_text(size=20),
+        plot.title = element_text(hjust = 0.5),
+        axis.text.y=element_blank())
+p_bar 
+dev.off()
+```
+
+```{r}
+library(EpiDISH)
+covs <- model.matrix(~ risk, data = qc_450.o@s)
+celldmc_450.o <- CellDMC(qc_450.o@m, qc_450.o@s$age ,qc_450.o@ctf.o[[1]], 
+                     cov.mod = covs, 
+                     adjPMethod = "fdr",
+                     adjPThresh = 0.05,
+                     sort = FALSE,
+                     mc.cores = 100)
+dmcts_450<- celldmc_450.o$dmct
+require(ggplot2)
+require(tidyr)
+dmcts <- as.data.frame(dmcts_he)
+dmct_hc <- dmcts[dmcts$DMC==1,]
+dmct_hc <- dmct_hc[,-1]
+df_long <- gather(dmct_hc, key = "Cell_Type", value = "Value")
+require(dplyr)
+df_counts <- df_long %>% group_by(Cell_Type, Value) %>% summarise(Counts = sum(Value == 1 | Value == -1))
+df_counts <- df_counts[-c(2,5,8,11),]
+df_counts$Value[9] <- -1
+pdf(file = "bar_adcs.pdf",width = 6,height = 4)
+p_bar <- ggplot(df_counts, aes(x = Cell_Type, y = Counts, fill = factor(Value))) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_text(aes(label = Counts, y = Counts + 0.5*sign(Counts),
+                group = Value), position = position_dodge(width = 0.9)) +
+  labs(x = "Cell Types", y = "Count")+
+  scale_fill_discrete(labels=c("hypo","hyper")) +
+  theme(legend.title=element_blank())+
+   ggtitle("CellDMC prediction (n=154)")+  
+  theme(panel.background = element_rect(fill = "white", colour = "black"),axis.text=element_text(size=17,face="bold"),
+        axis.title=element_text(size=20),
+        title=element_text(size=20),
+        plot.title = element_text(hjust = 0.5),
+        axis.text.y=element_blank())
+p_bar 
+dev.off()
+```
+
+Clock
+
+```{r}
+load("~/data/infinium/colon/GSE132804/GSE132804_qcepic.Rd")
+source("~/code/Dmathy/ELN_clock.R")
+```
+
+```{r epic}
+
+seqs <- seq(0.001,0.7,0.001)
+colon_he_clock <- colon_clock(qc_he.o,covs=NULL,seqs,nP=11)
+```
+
+Remove high risk in 450k data
+
+```{r}
+load("~/data/infinium/colon/GSE132804/GSE132804_qc450.Rd")
+idx <- which(qc_450.o@s$risk != "High")
+qc_hey.o <- new("qc.o")
+qc_hey.o@m <- qc_450.o@m[,idx]
+qc_hey.o@s <- qc_450.o@s[idx,]
+pdf("ctf_450_he.pdf")
+qc_hey.o@ctf.o <- CTF(qc_hey.o,Colon_Mref.m)
+dev.off()
+qc_hey.o@svd.o <- lm_svd(qc_hey.o)
+p_h(qc_hey.o,pic = c(26,5))
+```
+
+```{r built up}
+qc_bu.o <- new("qc.o")
+cpgs <- intersect(rownames(qc_he.o@m),rownames(qc_hey.o@m))
+idx_co1 <- match(cpgs,rownames(qc_he.o@m))
+idx_co2 <- match(cpgs,rownames(qc_hey.o@m))
+qc_bu.o@m <- cbind(qc_he.o@m[idx_co1,],qc_hey.o@m[idx_co2,])
+qc_bu.o@s <- rbind(qc_he.o@s,qc_hey.o@s)
+plat <- as.factor(c(rep("epic", 154), rep("450k", 79)))
+qc_bu.o@s$platform <- plat
+pdf("ctf_bu_he.pdf")
+qc_bu.o@ctf.o <- CTF(qc_bu.o,Colon_Mref.m)
+dev.off()
+qc_bu.o@svd.o <- lm_svd(qc_bu.o)
+p_h(qc_bu.o,pic = c(23,5))
+```
+
+```{r clock}
+seqs <- seq(0.001,0.7,0.001)
+cov <- model.matrix(~ platform, data = qc_bu.o@s)
+colon_bu_clock <- colon_clock(qc_bu.o,covs=cov,seqs,nP=10)
+colon_bu_aclock <-bench(qc_bu.o,seqs)
+```
+
+```{r 450k vali}
+load("~/data/infinium/colon/GSE131013/GSE131013_he.Rd")
+gse <- "GSE131013"
+age_lm <- validate(he_colon.o,colon_bu_clock[[1]],gse)
+age_all_lm <- validate(he_colon.o,colon_bu_aclock[[1]],gse)
+
+age_lm <- validate(qc.o,colon_bu_clock[[1]],gse)
+age_all_lm <- validate(qc.o,colon_bu_aclock[[1]],gse)
+```
+
+```{r trans450k}
+GPL <- fread("~/data/infinium/GPL_files/GPL13534/GPL13534-11288.txt", header = T)
+GPL <- as.data.frame(GPL)
+common_cpg <- intersect(GPL$ID,rownames(qc_he.o@m))
+idx <- match(common_cpg,rownames(qc_he.o@m))
+m_450k <- qc_he.o@m[idx,]
+he_450k <- new("qc.o")
+he_450k@m <- m_450k
+he_450k@s <- qc_he.o@s
+he_450k@ctf.o <- qc_he.o@ctf.o
+
+seqs <- seq(0.001,0.7,0.001)
+colon_bu_clock <- colon_clock(he_450k,covs=NULL,seqs,nP=11)
+colon_bu_aclock <-bench(he_450k,seqs)
+
+age_lm <- validate(qc_450.o,colon_bu_clock[[1]],gse)
+age_all_lm <- validate(qc_450.o,colon_bu_aclock[[1]],gse)
+```

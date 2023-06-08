@@ -1,3 +1,9 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(include = FALSE)
 knitr::opts_knit$set(root.dir = "/mnt/local-disk/data/guoxiaolong/Renv")
@@ -130,42 +136,277 @@ pval_ch <- format(re_ch[[1]]$p.value,digits = 1)
 ```
 
 ```{r figure}
-pdf("vali_64.pdf", width=12,height=6)
-par(mfrow=c(1,2),mar=c(4,4,4,4))
-smoothScatter(hep$ex.Hep, hep$va.Hep, xlab = " t(Hep:DiscoverySet)", 
-              ylab = "t(Hep:Validation Set)", 
+# GSE107038
+
+idx <- match(rownames(va_t),rownames(ex_t))
+idx <- idx[complete.cases(idx)]
+
+ex <- ex_t[idx,]
+idx <- match(rownames(ex),rownames(va_t))
+va <- va_t[idx,]
+if(all(rownames(va) == rownames(ex))){
+hep1 <- data.frame(ex$Hep,va$Hep)
+chol1 <- data.frame(ex$Chol,va$Chol)
+}
+
+fet <- function(x){
+n1 <- sum(x$ex >= fdr_threshold_ex_h & x$va >= threshold_va)
+n2 <- sum(x$ex <= -fdr_threshold_ex_h & x$va >= threshold_va)
+n3 <- sum(x$ex <= -fdr_threshold_ex_h & x$va <= -threshold_va)
+n4 <- sum(x$ex >= fdr_threshold_ex_h & x$va <= -threshold_va)
+m_f <- matrix(c(n1,n2,n4,n3),ncol = 2,byrow = TRUE)
+re <- fisher.test(m_f,alternative = "greater")
+return(list(re, m_f))
+}
+# Hep
+re_h1 <- fet(hep1)
+m_h1 <- re_h1[[2]]
+OR_h1 <- format(re_h1[[1]]$estimate,digits = 2)
+pval_h1 <- format(re_h1[[1]]$p.value,digits = 1)
+# Chol
+re_ch1 <- fet(chol1)
+m_ch1 <- re_ch1[[2]]
+OR_ch1 <- format(re_ch1[[1]]$estimate,digits = 2)
+pval_ch1 <- format(re_ch1[[1]]$p.value,digits = 1)
+
+my_palette <- colorRampPalette(colors = c("white","#F2F7FC", "#66A7D5", "#4477B9", "#2A4D9C", "#1B3189", "#0C2167"))
+pn1 <- function() {
+  par(
+    mar= c(2,4,2.5,2),
+    cex.lab = 1.5, cex.axis = 1.5, cex.main = 1.5
+  )
+  smoothScatter(hep1$ex.Hep, hep1$va.Hep, xlab = "", 
+              ylab = "", 
               xlim = c(-7,7), ylim = c(-7,7), cex = 1.5, 
-              main = "Validation plot of age-DMCTs of Hepatocyte")
+              main = "",colramp = my_palette,nrpoints = 700)
 abline(v = 0, lty = 2, col = "black")
 abline(h = 0, lty = 2, col = "black")
-abline(v = fdr_threshold_ex_h, lty = 2, col = "blue")
-abline(v = -fdr_threshold_ex_h, lty = 2, col = "blue")
-abline(h = threshold_va, lty = 2, col = "blue")
-abline(h = -threshold_va, lty = 2, col = "blue")
-text(-6.5, 6.7, paste0("OR = ",OR_h),cex = 1,adj=c(0, 0))
-text(-6.5, 6, paste0("p = ",pval_h),cex = 1,adj=c(0, 0))
+abline(v = fdr_threshold_ex_h, lty = 2, col = "red",lwd = 2)
+abline(v = -fdr_threshold_ex_h, lty = 2, col = "red",lwd = 2)
+abline(h = threshold_va, lty = 2, col = "red",lwd = 2)
+abline(h = -threshold_va, lty = 2, col = "red",lwd = 2)
+text(-6.5, 6.7, paste0("OR = ",OR_h1),cex = 1.5,adj=c(0, 0))
+text(-6.5, 6, paste0("p = ",pval_h1),cex = 1.5,adj=c(0, 0))
 
-text(-4.5,3.5,m_h[1,2],cex = 0.7,adj=c(0, 0),col = "red")
-text(4.5,-3.5,m_h[2,1],cex = 0.7,adj=c(0, 0),col = "red")
+text(-4.5,3.5,m_h1[1,2],cex = 1,adj=c(0, 0),col = "red")
+text(4.5,-3.5,m_h1[2,1],cex = 1,adj=c(0, 0),col = "red")
 
-text(5.5,4.5,m_h[1,1],cex = 0.7,adj=c(0, 0),col = "red")
-text(-5.5,-4.5,m_h[2,2],cex = 0.7,adj=c(0, 0),col = "red")
-smoothScatter(chol$ex.Chol, chol$va.Chol, xlab = " t(Chol:DiscoverySet)", 
-              ylab = "t(Chol:Validation Set)", 
+text(5.5,4.5,m_h1[1,1],cex = 1.3,adj=c(0, 0),col = "red")
+text(-6,-5,m_h1[2,2],cex = 1.3,adj=c(0, 0),col = "red")
+title(ylab="t(Hep:Validation Set)", mgp=c(2.4,1,0), cex.lab=1.5)
+title(xlab="t(Hep:DiscoverySet)", mgp=c(2.4,1,0), cex.lab=1.5)
+title(main="Normal livers: n = 40", mgp=c(2.4,1,0), cex.lab=1.5)}
+pn2 <- function() {
+  par(
+    mar= c(4,4,1,2),
+    cex.lab = 1.5, cex.axis = 1.5
+  )
+smoothScatter(chol1$ex.Chol, chol1$va.Chol, xlab = "", 
+              ylab = "", 
               xlim = c(-7,7), ylim = c(-7,7), cex = 1.5, 
-              main = "Validation plot of age-DMCTs of Cholangiocyte")
+              colramp = my_palette,nrpoints = 700)
 abline(v = 0, lty = 2, col = "black")
 abline(h = 0, lty = 2, col = "black")
-abline(v = fdr_threshold_ex_ch, lty = 2, col = "blue")
-abline(v = -fdr_threshold_ex_ch, lty = 2, col = "blue")
-abline(h = threshold_va, lty = 2, col = "blue")
-abline(h = -threshold_va, lty = 2, col = "blue")
-text(-6.5, 6.7, paste0("OR = ",OR_ch),cex = 1,adj=c(0, 0))
-text(-6.5, 6, paste0("p = ",pval_ch),cex = 1,adj=c(0, 0))
+abline(v = fdr_threshold_ex_ch, lty = 2, col = "red",lwd = 2)
+abline(v = -fdr_threshold_ex_ch, lty = 2, col = "red",lwd = 2)
+abline(h = threshold_va, lty = 2, col = "red",lwd = 2)
+abline(h = -threshold_va, lty = 2, col = "red",lwd = 2)
+text(-6.5, 6.7, paste0("OR = ",OR_ch1),cex = 1.5,adj=c(0, 0))
+text(-6.5, 6, paste0("p = ",pval_ch1),cex = 1.5,adj=c(0, 0))
 
-text(-4.5,3.5,m_ch[1,2],cex = 0.7,adj=c(0, 0),col = "red")
-text(4.5,-3.5,m_ch[2,1],cex = 0.7,adj=c(0, 0),col = "red")
-text(5.5,4.5,m_ch[1,1],cex = 0.7,adj=c(0, 0),col = "red")
-text(-5.5,-4.5,m_ch[2,2],cex = 0.7,adj=c(0, 0),col = "red")
+text(-4.5,3.5,m_ch1[1,2],cex = 1,adj=c(0, 0),col = "red")
+text(4.5,-3.5,m_ch1[2,1],cex = 1,adj=c(0, 0),col = "red")
+text(5,6,m_ch1[1,1],cex = 1.3,adj=c(0, 0),col = "red")
+text(-6,-6,m_ch1[2,2],cex = 1.3,adj=c(0, 0),col = "red")
+title(ylab="t(Chol:Validation Set)", mgp=c(2.4,1,0), cex.lab=1.5)
+title(xlab="t(Chol:DiscoverySet)", mgp=c(2.4,1,0), cex.lab=1.5)}
+
+pn <- plot_grid(pn1,pn2,ncol = 1,align = "v")
+
+
+```
+
+```{r}
+
+idx <- match(rownames(va_t),rownames(ex_t))
+idx <- idx[complete.cases(idx)]
+
+ex <- ex_t[idx,]
+idx <- match(rownames(ex),rownames(va_t))
+va <- va_t[idx,]
+if(all(rownames(va) == rownames(ex))){
+hep4 <- data.frame(ex$Hep,va$Hep)
+chol4 <- data.frame(ex$Chol,va$Chol)
+}
+
+fet <- function(x){
+n1 <- sum(x$ex >= fdr_threshold_ex_h & x$va >= threshold_va)
+n2 <- sum(x$ex <= -fdr_threshold_ex_h & x$va >= threshold_va)
+n3 <- sum(x$ex <= -fdr_threshold_ex_h & x$va <= -threshold_va)
+n4 <- sum(x$ex >= fdr_threshold_ex_h & x$va <= -threshold_va)
+m_f <- matrix(c(n1,n2,n4,n3),ncol = 2,byrow = TRUE)
+re <- fisher.test(m_f,alternative = "greater")
+return(list(re, m_f))
+}
+# Hep
+re_h4 <- fet(hep4)
+m_h4 <- re_h4[[2]]
+OR_h4 <- format(re_h4[[1]]$estimate,digits = 2)
+pval_h4 <- format(re_h4[[1]]$p.value,digits = 1)
+# Chol
+re_ch4 <- fet(chol4)
+m_ch4 <- re_ch4[[2]]
+OR_ch4 <- format(re_ch4[[1]]$estimate,digits = 2)
+pval_ch4 <- format(re_ch4[[1]]$p.value,digits = 1)
+
+
+my_palette <- colorRampPalette(colors = c("white","#F2F7FC", "#66A7D5", "#4477B9", "#2A4D9C", "#1B3189", "#0C2167"))
+pb1 <- function() {
+  par(
+    mar= c(2,4,2.5,2),
+    cex.lab = 1.5, cex.axis = 1.5, cex.main = 1.5
+  )
+  smoothScatter(hep4$ex.Hep, hep4$va.Hep, xlab = "", 
+              ylab = "", 
+              xlim = c(-7,7), ylim = c(-7,7), cex = 1.5, 
+              main = "",colramp = my_palette,nrpoints = 700)
+abline(v = 0, lty = 2, col = "black")
+abline(h = 0, lty = 2, col = "black")
+abline(v = fdr_threshold_ex_h, lty = 2, col = "red",lwd = 2)
+abline(v = -fdr_threshold_ex_h, lty = 2, col = "red",lwd = 2)
+abline(h = threshold_va, lty = 2, col = "red",lwd = 2)
+abline(h = -threshold_va, lty = 2, col = "red",lwd = 2)
+text(-6.5, 6.7, paste0("OR = ",OR_h4),cex = 1.5,adj=c(0, 0))
+text(-6.5, 6, paste0("p = ",pval_h4),cex = 1.5,adj=c(0, 0))
+
+text(-4.5,3.5,m_h4[1,2],cex = 1,adj=c(0, 0),col = "red")
+text(4.5,-3.5,m_h4[2,1],cex = 1,adj=c(0, 0),col = "red")
+
+text(5.5,4.5,m_h4[1,1],cex = 1.3,adj=c(0, 0),col = "red")
+text(-6,-5,m_h4[2,2],cex = 1.3,adj=c(0, 0),col = "red")
+title(ylab="t(Hep:Validation Set)", mgp=c(2.4,1,0), cex.lab=1.5)
+title(xlab="t(Hep:DiscoverySet)", mgp=c(2.4,1,0), cex.lab=1.5)
+title(main="Normal livers: n = 64", mgp=c(2.4,1,0), cex.lab=1.5)}
+pb2 <- function() {
+  par(
+    mar= c(4,4,1,2),
+    cex.lab = 1.5, cex.axis = 1.5
+  )
+smoothScatter(chol4$ex.Chol, chol4$va.Chol, xlab = "", 
+              ylab = "", 
+              xlim = c(-7,7), ylim = c(-7,7), cex = 1.5, 
+              colramp = my_palette,nrpoints = 700)
+abline(v = 0, lty = 2, col = "black")
+abline(h = 0, lty = 2, col = "black")
+abline(v = fdr_threshold_ex_ch, lty = 2, col = "red",lwd = 2)
+abline(v = -fdr_threshold_ex_ch, lty = 2, col = "red",lwd = 2)
+abline(h = threshold_va, lty = 2, col = "red",lwd = 2)
+abline(h = -threshold_va, lty = 2, col = "red",lwd = 2)
+text(-6.5, 6.7, paste0("OR = ",OR_ch4),cex = 1.5,adj=c(0, 0))
+text(-6.5, 6, paste0("p = ",pval_ch4),cex = 1.5,adj=c(0, 0))
+
+text(-4.5,3.5,m_ch4[1,2],cex = 1,adj=c(0, 0),col = "red")
+text(4.5,-3.5,m_ch4[2,1],cex = 1,adj=c(0, 0),col = "red")
+text(5,6,m_ch4[1,1],cex = 1.3,adj=c(0, 0),col = "red")
+text(-6,-6,m_ch4[2,2],cex = 1.3,adj=c(0, 0),col = "red")
+title(ylab="t(Chol:Validation Set)", mgp=c(2.4,1,0), cex.lab=1.5)
+title(xlab="t(Chol:DiscoverySet)", mgp=c(2.4,1,0), cex.lab=1.5)}
+
+pb <- plot_grid(pb1,pb2,ncol = 1,align = "v")
+
+```
+
+```{r}
+
+idx <- match(rownames(va_t),rownames(ex_t))
+idx <- idx[complete.cases(idx)]
+
+ex <- ex_t[idx,]
+idx <- match(rownames(ex),rownames(va_t))
+va <- va_t[idx,]
+if(all(rownames(va) == rownames(ex))){
+hep2 <- data.frame(ex$Hep,va$Hep)
+chol2 <- data.frame(ex$Chol,va$Chol)
+}
+fet <- function(x){
+n1 <- sum(x$ex >= fdr_threshold_ex_h & x$va >= threshold_va)
+n2 <- sum(x$ex <= -fdr_threshold_ex_h & x$va >= threshold_va)
+n3 <- sum(x$ex <= -fdr_threshold_ex_h & x$va <= -threshold_va)
+n4 <- sum(x$ex >= fdr_threshold_ex_h & x$va <= -threshold_va)
+m_f <- matrix(c(n1,n2,n4,n3),ncol = 2,byrow = TRUE)
+re <- fisher.test(m_f,alternative = "greater")
+return(list(re, m_f))
+}
+# Hep
+re_h2 <- fet(hep2)
+m_h2 <- re_h2[[2]]
+OR_h2 <- format(re_h2[[1]]$estimate,digits = 2)
+pval_h2 <- format(re_h2[[1]]$p.value,digits = 1)
+# Chol
+re_ch2<- fet(chol2)
+m_ch2 <- re_ch2[[2]]
+OR_ch2 <- format(re_ch2[[1]]$estimate,digits = 2)
+pval_ch2 <- format(re_ch2[[1]]$p.value,digits = 1)
+my_palette <- colorRampPalette(colors = c("white","#F2F7FC", "#66A7D5", "#4477B9", "#2A4D9C", "#1B3189", "#0C2167"))
+po1 <- function() {
+  par(
+    mar= c(2,4,2.5,2),
+    cex.lab = 1.5, cex.axis = 1.5, cex.main = 1.5
+  )
+  smoothScatter(hep2$ex.Hep, hep2$va.Hep, xlab = "", 
+              ylab = "", 
+              xlim = c(-7,7), ylim = c(-7,7), cex = 1.5, 
+              main = "",colramp = my_palette,nrpoints = 700)
+abline(v = 0, lty = 2, col = "black")
+abline(h = 0, lty = 2, col = "black")
+abline(v = fdr_threshold_ex_h, lty = 2, col = "red",lwd = 2)
+abline(v = -fdr_threshold_ex_h, lty = 2, col = "red",lwd = 2)
+abline(h = threshold_va, lty = 2, col = "red",lwd = 2)
+abline(h = -threshold_va, lty = 2, col = "red",lwd = 2)
+text(-6.5, 6.7, paste0("OR = ",OR_h2),cex = 1.5,adj=c(0, 0))
+text(-6.5, 6, paste0("p = ",pval_h2),cex = 1.5,adj=c(0, 0))
+
+text(-4.5,3.5,m_h2[1,2],cex = 1,adj=c(0, 0),col = "red")
+text(4.5,-3.5,m_h2[2,1],cex = 1,adj=c(0, 0),col = "red")
+
+text(5.5,4.5,m_h2[1,1],cex = 1.3,adj=c(0, 0),col = "red")
+text(-6,-5,m_h2[2,2],cex = 1.3,adj=c(0, 0),col = "red")
+title(ylab="t(Hep:Validation Set)", mgp=c(2.4,1,0), cex.lab=1.5)
+title(xlab="t(Hep:DiscoverySet)", mgp=c(2.4,1,0), cex.lab=1.5)
+title(main="Obese livers: n = 67", mgp=c(2.4,1,0), cex.lab=1.5)}
+po2 <- function() {
+  par(
+    mar= c(4,4,1,2),
+    cex.lab = 1.5, cex.axis = 1.5
+  )
+smoothScatter(chol2$ex.Chol, chol2$va.Chol, xlab = "", 
+              ylab = "", 
+              xlim = c(-7,7), ylim = c(-7,7), cex = 1.5, 
+              colramp = my_palette,nrpoints = 700)
+abline(v = 0, lty = 2, col = "black")
+abline(h = 0, lty = 2, col = "black")
+abline(v = fdr_threshold_ex_ch, lty = 2, col = "red",lwd = 2)
+abline(v = -fdr_threshold_ex_ch, lty = 2, col = "red",lwd = 2)
+abline(h = threshold_va, lty = 2, col = "red",lwd = 2)
+abline(h = -threshold_va, lty = 2, col = "red",lwd = 2)
+text(-6.5, 6.7, paste0("OR = ",OR_ch2),cex = 1.5,adj=c(0, 0))
+text(-6.5, 6, paste0("p = ",pval_ch2),cex = 1.5,adj=c(0, 0))
+
+text(-4.5,3.5,m_ch2[1,2],cex = 1,adj=c(0, 0),col = "red")
+text(4.5,-3.5,m_ch2[2,1],cex = 1,adj=c(0, 0),col = "red")
+text(5,6,m_ch2[1,1],cex = 1.3,adj=c(0, 0),col = "red")
+text(-6,-6,m_ch2[2,2],cex = 1.3,adj=c(0, 0),col = "red")
+title(ylab="t(Chol:Validation Set)", mgp=c(2.4,1,0), cex.lab=1.5)
+title(xlab="t(Chol:DiscoverySet)", mgp=c(2.4,1,0), cex.lab=1.5)}
+
+po <- plot_grid(po1,po2,ncol = 1,align = "v")
+
+```
+
+```{r}
+
+pdf("test.pdf",height = 10,width = 15)
+p_vali <- plot_grid(pn,pb,po,NULL,align = "h",ncol = 4,rel_widths = c(1,1,1,0.8))
+p_vali
 dev.off()
 ```

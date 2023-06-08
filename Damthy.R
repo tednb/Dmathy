@@ -63,7 +63,6 @@ f.rawD <- function(rgset,GPL,m_pval = data.frame(),series,...){
     rgset <- rgset
     rawD <- new("rawD", rgset = list(rgset), series = as.data.frame(series))
     rawD@GPL <- GPL #match GPL to m
-    print(paste0("you got the idat data of ",GSEnumber))
   
     }
   return(rawD)
@@ -74,7 +73,6 @@ f.raw.o <- function(rawD,...){
   library(parallel)
 
   raw.o <- new("raw.o")
-  print(paste0("you got the processed data of ",GSEnumber))
   if (length(rawD@m_pval) != 0){
   print("Tidy matrix with p values, you need to check the first column of the matrix (CpGs)!")
   # extract beta and P
@@ -211,7 +209,7 @@ imp <- function(raw.o,cutoff=0.01){
 }
 
 f.qc.o <- function(raw.o,...){
-qc.o <- new("qc.o", name = paste0(GSEnumber,"_all"))
+qc.o <- new("qc.o")
 #bmiq-------------------------------------------------
 choice <- readline(prompt = "Do you need to adjust type 2 probe bias? y/n")
 if (choice == "y"){
@@ -259,7 +257,7 @@ return(qc.o)
 }
 
 f.he.o <- function(qc.o,...){
-  he.o <- new("he.o", name = paste0(GSEnumber,"_healthy"))
+  he.o <- new("he.o")
   idx <- which(qc.o@s$disease == 0)
   he.o@m <- qc.o@m[,idx]
   he.o@s <- qc.o@s[idx,-which(colnames(qc.o@s) == "disease")]
@@ -275,7 +273,7 @@ setMethod("coverage","raw.o",function(obj,cutoff=0.01,...){
   library(pbapply)
   library(gridExtra)
  
-  if (length(raw.o@raw.p) == 0){
+  if (length(obj@raw.p) == 0){
     cg <- pbapply(obj@raw.m,1,function(x) {sum(!is.na(x))/length(x)})   # coverage in each probe
     sg <- pbapply(obj@raw.m,2,function(x) {sum(!is.na(x))/length(x)})   # coverage in each sample
   }else{

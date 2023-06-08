@@ -85,7 +85,7 @@ p_h(qc.o,pic = c(27,5))
 Validation
 
 ```{r}
-load("~/data/infinium/liver_sample/341_liver_samples/RData/dmct_hc.Rd")
+#load("~/data/infinium/liver_sample/341_liver_samples/RData/dmct_hc.Rd")
 
 hyper_h <- rownames(dmct_hc)[dmct_hc$Hep == 1]
 hypo_h <- rownames(dmct_hc)[dmct_hc$Hep == -1]
@@ -122,21 +122,38 @@ meanc_hypo <- apply(mc_hypo,2,mean)
 
 ```{r plot}
 # hyper
-pdf("vali_hyper_hypo.pdf",width = 12,height = 8)
-par(mfrow=c(2,2),mar=c(4,4,4,4))
+library(ggplot2)
+library(cowplot)
+pdf("vali_hyper_hypo.pdf",width = 20,height = 5)
 r <- cor(qc.o@s$age,mean_hyper, method = "pearson")
 p_value <- cor.test(qc.o@s$age,mean_hyper)$p.value
 
 rc <- cor(qc.o@s$age,meanc_hyper, method = "pearson")
 pc_value <- cor.test(qc.o@s$age,meanc_hyper)$p.value
 
-plot(qc.o@s$age,mean_hyper,xlab = "age",ylab = "mean beta",main = "Hypermethylated age-DMCs of hepatocytes",pch = 20,col = "green")
-text(x = 5, y = 0.49,labels = paste0("r = ",format(r, digits = 2)),cex = 0.8,col = "red")
-text(x = 5, y = 0.48,labels = paste0("p = ",format(p_value, digits = 1)),cex = 0.8,col = "red")
+p1<-ggplot(qc.o@s, aes(x = age, y = mean_hyper)) +
+# 大号紫色三角形点
+  geom_point(pch = 17, col = "orange",size = 4) +
+  xlab("Age: years") + 
+  ylab("Mean beta") + 
+  ggtitle(paste0("Hep hyper age-DMCs","\n","PCC = ", format(r, digits = 2), " p = ", format(p_value, digits = 1))) +
+  theme_bw()+
+  theme(axis.text=element_text(size=17,face="bold"),
+        axis.title=element_text(size=20),
+        title=element_text(size=20),
+        legend.position="none",plot.title = element_text(hjust = 0.5))
+  
 # Negative control
-plot(qc.o@s$age,meanc_hyper,xlab = "age",ylab = "mean beta",main = "Hypermethylated age-DMCs of cholangiocytes (Negative control)",pch = 20,col = "blue")
-text(x = 58, y = 0.49,labels = paste0("r = ",format(rc, digits = 2)),cex = 0.8,col = "red")
-text(x = 58, y = 0.47,labels = paste0("p = ",format(pc_value, digits = 1)),cex = 0.8,col = "red")
+p2<-ggplot(qc.o@s, aes(x = age, y = meanc_hyper)) +
+  geom_point(pch = 17, col = "purple",size = 4) +
+  xlab("Age: years") +
+  ylab(NULL) +
+  ggtitle(paste0("Chol hyper age-DMCs","\n","PCC = ", format(r, digits = 2), " p = ", format(p_value, digits = 1))) +
+  theme_bw()+
+  theme(axis.text=element_text(size=17,face="bold"),
+        axis.title=element_text(size=20),
+        title=element_text(size=20),
+        legend.position="none",plot.title = element_text(hjust = 0.5))
 # hypo
 r <- cor(qc.o@s$age,mean_hypo, method = "pearson")
 p_value <- cor.test(qc.o@s$age,mean_hypo)$p.value
@@ -144,12 +161,45 @@ p_value <- cor.test(qc.o@s$age,mean_hypo)$p.value
 rc <- cor(qc.o@s$age,meanc_hypo, method = "pearson")
 pc_value <- cor.test(qc.o@s$age,meanc_hypo)$p.value
 
-plot(qc.o@s$age,mean_hypo,xlab = "age",ylab = "mean beta",main = "Hypomethylated age-DMCs of hepatocytes",pch = 20,col = "green")
-text(x = 58, y = 0.51,labels = paste0("r = ",format(r, digits = 2)),cex = 0.8,col = "red")
-text(x = 58, y = 0.49,labels = paste0("p = ",format(p_value, digits = 1)),cex = 0.8,col = "red")
+# plot for hepatocytes
+p3<-ggplot(qc.o@s, aes(x = age, y = mean_hypo)) +
+  geom_point(pch = 15, col = "orange",size = 4) +
+  xlab("Age: years") +
+  ylab(NULL) +
+  ggtitle(paste0("Hep hypo age-DMCs","\n","PCC = ", format(r, digits = 2), " p = ", format(p_value, digits = 1))) +
+  theme_bw()+
+  theme(axis.text=element_text(size=17,face="bold"),
+        axis.title=element_text(size=20),
+        title=element_text(size=20),
+        legend.position="none",plot.title = element_text(hjust = 0.5))
 
-plot(qc.o@s$age,meanc_hypo,xlab = "age",ylab = "mean beta",main = "Hypomethylated age-DMCs of cholangiocytes (Negative control)",pch = 20,col = "blue")
-text(x = 5, y = 0.60,labels = paste0("r = ",format(rc, digits = 2)),cex = 0.8,col = "red")
-text(x = 5, y = 0.59,labels = paste0("p = ",format(pc_value, digits = 1)),cex = 0.8,col = "red")
+# plot for cholangiocytes (negative control)
+p4<-ggplot(qc.o@s, aes(x = age, y = meanc_hypo)) +
+  geom_point(pch = 15, col = "purple",size = 4) +
+  xlab("Age: years") +
+  ylab(NULL) +
+  ggtitle(paste0("Chol hypo age-DMCs","\n","PCC = ", format(r, digits = 2), " p = ", format(p_value, digits = 1))) +
+theme_bw()+
+  theme(axis.text=element_text(size=17,face="bold"),
+        axis.title=element_text(size=20),
+        title=element_text(size=20),
+        legend.position="none",plot.title = element_text(hjust = 0.5))
+
+p_1 <- plot_grid(p1,p2,p3,p4,ncol = 4,nrow = 1,rel_widths = c(1.1,1,1,1),align = "h")
+p_1
+dev.off()
+```
+
+```{r}
+p_12 <- plot_grid(p_2,p_1,nrow = 2,align = "v", labels =c("","e)"),rel_widths = c(1.3,1),label_size = 12)
+pdf("test.pdf",height = 10,width = 23)
+p_12
+dev.off()
+```
+
+```{r}
+p_fig1 <- plot_grid(p_12,p_vali,nrow = 2,align = "v",labels =c("","f)"),label_size = 12)
+pdf("fg1.pdf",height = 25,width = 25)
+p_fig1
 dev.off()
 ```

@@ -11,154 +11,436 @@ knitr::opts_chunk$set(include = FALSE)
 knitr::opts_knit$set(root.dir = "/mnt/local-disk/data/guoxiaolong/Renv")
 ```
 
-```{r data}
+```{r ALL}
+output_file <- file("output.txt")
+sink(output_file, append = TRUE)
 load("~/data/infinium/liver_sample/341_liver_samples/RData/GSE180474_he.Rd")
-load("~/data/infinium/liver_sample/341_liver_samples/RData/dmct_hc.Rd")
 source("~/code/Dmathy/ELN_clock.R")
-
+GPL <- fread("~/data/infinium/GPL_files/GPL13534/GPL13534-11288.txt", header = T)
+GPL <- as.data.frame(GPL)
+common_cpg <- intersect(GPL$ID,rownames(he.o@m))
+idx <- match(common_cpg,rownames(he.o@m))
+m_450k <- he.o@m[idx,]
+he_450k <- new("qc.o")
+he_450k@m <- m_450k
+he_450k@s <- he.o@s
+he_450k@ctf.o <- he.o@ctf.o
 ```
 
-Sorting hepatocytes' age-DMCs by \|PCC\| \>= 0.3 (FOR SCAGE)
-
 ```{r}
-he_adc <- rownames(dmct_hc)[dmct_hc$Hep == 1 | dmct_hc$Hep == -1]
-idx <- match(he_adc,rownames(he.o@m))
-m <- he.o@m[idx,]
-age <- he.o@s$age
-r <- apply(m,1,function(x) {cor(x,age,method = "pearson")})
-
-den <- density(abs(r))
-plot(den)
-
-r_ref <- r[abs(r) >= 0.3]
-save(r_ref,file = "~/data/infinium/liver_sample/341_liver_samples/RData/AC_pcc.Rdata")
-```
-
-1.  Randomly sampling 70% of total 210 samples as a training dataset (150).
-
-```{r}
-dmct_hc <- dmct_hc[,c(2,4)]
+# 1. test
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/train/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/train/"
 he.o@name <- "GSE180474"
-sets <- extract(he.o,seed = 1234)
-trainset <- sets[[1]]
-testset <- sets[[2]]
+# sets <- extract(he.o,seed = 1234)
+# trainset <- sets[[1]]
+# testset <- sets[[2]]、
+
+covs <- model.matrix(~ sex + t2d, data = he.o@s)
+seqs <- seq(0.001,0.7,0.001)
+re_epic <- clock(he.o,covs,seqs)
+re_ben_e <-bench(he.o,seqs)
+re_450k <- clock(he_450k,covs,seqs)
+re_ben_4 <- bench(he_450k,seqs)
+save(re_epic,re_ben_4,re_450k,re_ben,file = paste0(he.o@name,"_clock.Rd"))
+file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
+file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
+clock_epic <- re_epic[[1]]
+clock_ben_e <- re_ben_e[[1]]
+clock_450k <- re_450k[[1]]
+clock_ben_4 <- re_ben_4[[1]]
+sink()
+```
+
+```{r}
+# 2. GSE123995
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/HEP/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/HEP/"
+load("~/data/infinium/liver_sample/AA_hepatocytes/GSE123995_qc.Rd")
+gse <- "GSE123995"
+age_hep <- validate(qc.o,clock_epic,gse)
+age_all_hep <- validate(qc.o,clock_ben_e,gse)
+file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
+file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
+
+# 3. GSE103078
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/40/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/40/"
+load("~/data/infinium/liver_sample/40_normal_liver_samples/GSE107038_qc.Rd")
+gse <- "GSE103078"
+age_40 <- validate(qc_107038.o,clock_450k,gse)
+age_40_all <- validate(qc_107038.o,clock_ben_4,gse)
+file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
+file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
+
+# 4. GSE61446
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/obese/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/obese/"
+load("~/data/infinium/liver_sample/67_obese_livers/GSE61446/GSE61446_qc.Rd")
+gse <- "GSE61446"
+age_ob <- validate(qc.o,clock_450k,gse)
+age_all_ob <- validate(qc.o,clock_ben_4,gse)
+file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
+file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
+
+# 5. GSE61258
+load("~/data/infinium/liver_sample/79_livers(25_healthy)/GSE61258/GSE61258_qc.Rd")
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/79/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/79/"
+gse <- "GSE61258"
+age_mix <- validate(qc.o,clock_450k,gse)
+age_mix_all <- validate(qc.o,clock_ben_4,gse)
+file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
+file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
+# 6. Validating on CD4T and CD8T: GSE71955
+load("~/data/infinium/purified_blood/GSE71955/CD4_qc.Rd")
+load("~/data/infinium/purified_blood/GSE71955/CD8_qc.Rd")
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/CD4/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/CD4/"
+gse <- "GSE71955_CD4"
+age_cd4 <- validate(cd4_qc.o,clock_450k,gse)
+age_cd4_all <- validate(cd4_qc.o,clock_ben_4,gse)
+file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
+file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/CD8/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/CD8/"
+gse <- "GSE71955_CD8"
+age_cd8 <- validate(cd8_qc.o,clock_450k,gse)
+age_cd8_all <- validate(cd8_qc.o,clock_ben_4,gse)
+file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
+file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
+# 7. Validating on kidney , colon and prostate
+# colon
+load("~/data/infinium/colon/GSE131013/GSE131013_he.Rd")
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/colon/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/colon/"
+gse <- "GSE131013"
+age_colon <- validate(he_colon.o,clock_450k,gse)
+age_colon_all <- validate(he_colon.o,clock_ben_4,gse)
+file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
+file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
+# prostate
+load("~/data/infinium/prostate/GSE76938_he.Rd")
+gse <- "GSE76938"
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/prostate/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/prostate/"
+age_pros <- validate(hey.o,clock_450k,gse)
+age_pros_all <- validate(hey.o,clock_ben_4,gse)
+file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
+file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
+# kidney
+load("~/data/infinium/kidney/GSE79100_qc.Rd")
+gse <- "GSE79100"
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/kidney/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/kidney/"
+age_kid <- validate(qc.o,clock_450k,gse)
+age_kid_all <- validate(qc.o,clock_ben_4,gse)
+file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
+file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
+
+```
+
+7\. Comparing the age acceleration between normal liver and diseased or obese liver in GSE61258
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(ggsignif)
+df_mix <-  data.frame(age_mix_all$All, age_mix$Chol, age_mix$Hep)
+df_mix<-df_mix-qc.o@s$age
+colnames(df_mix) <- c("All","Chol","Hep")
+ill <- qc.o@s$disease
+df_mix$ill <- ill
+df_mix$ill <- factor(df_mix$ill,levels = c("0","1","2","3","4","5"),labels = c("Healthy:n=26","HealthyObese:n=6","NAFLD:n=14","PBC:n=12","PSC:n=14","NASH:n=7"))
+# welcoxon test
+p <- c()
+ps <- list()
+for (i in 1:3){
+  for(b in levels(df_mix$ill)){
+      p[[b]] <-format(wilcox.test(df_mix[which(df_mix$ill==b),i],mu = 0,alternative = "greater")$p.value,scientific = TRUE,digits=1)}
+
+
+  ps[[i]] <- p
+}
+    
+acc_pr <- gather(df_mix,clock,age_acc,-ill)
+
+```
+
+```{r}
+#Draw a boxplot of age acceleration against different disease status, in the boxplot each status has 3 boxplots, which represent the age acceleration of 3 cell types.
+pdf("GSE61258_age-acc_disease.pdf",width = 10,height = 6)
+# Using one boxplot to display all cell types
+p <- ggplot(acc_pr,aes(x = ill,y = age_acc,fill = clock)) + 
+geom_boxplot() + theme_bw() + 
+theme(legend.position = "right") + 
+labs(x = "Disease status",y = "Age acceleration (years)") + 
+scale_fill_manual(values = c("red","blue","green")) + 
+theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+# hide the title of legend
+guides(fill=guide_legend(title=NULL))+
+# add a title
+ggtitle("Age acceleration predicted by different clocks")+
+# add a dashed line of y = 0
+geom_hline(yintercept = 0,linetype = "dashed",color = "black")+
+# hide gridding lines
+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+p_list <- ggplot_build(p)
+x_pos<-as.numeric(p_list$data[[1]]$x)
+# add p-value
+ xpos <- 0.75
+ k <- 0.75
+for (i in 1:3){
+  for(b in levels(df_mix$ill)){
+    print(xpos)
+    # get the y position of the p-value
+    pos <- max(df_mix[which(df_mix$ill==b),i])
+    # add the p-value
+    p <- p + annotate("text",x = xpos,y = pos+2,label = format(ps[[i]][[b]],digits = 2),size = 3)
+  xpos <- xpos + 1
+  
+  }
+  xpos <- k+0.25
+  k <- k +0.25
+}
+
+p
+dev.off()
+
+
+```
+
+8\. Comparing the age acceleration between normal liver and obese liver Using GSE61446
+
+```{r}
+library(ggsignif)
+load("~/data/infinium/liver_sample/67_obese_livers/GSE61446/GSE61446_qc.Rd")
+
+acc_pre <- list()
+age_df <- list("All" <- age_all_ob$All[,1],"Chol"=age_ob$Chol[,1],"Hep"= age_ob$Hep[,1])
+for (i in 1:length(age_df)){
+
+# calculate the age acceleration
+#acc_pre[[cell]] <- age_pre[[cell]] - qc.o@s$age # ordinary
+acc_pre[[i]] <- age_df[[i]] - qc.o@s$age # resid method
+}
+#acc_al <- age_al[[1]] - qc.o@s$age
+acc_pre <- as.data.frame(acc_pre)
+# Change the sequence of all and hep
+colnames(acc_pre) <- c("All","Chol","Hep")
+acc_pr <- gather(acc_pre,clock,age_acc)
+#Draw a boxplot of age acceleration of different cell types
+# Use different colors to represent different cell types
+p <- c()
+for (i in 1:3){
+p[i] <-format(wilcox.test(acc_pre[,i],mu = 0,alternative = "two.sided")$p.value,scientific = TRUE,digits=1)}
+
+```
+
+```{r}
+pdf("GSE61446_age-acc_bmi.pdf",width = 6,height = 6)
+# Use different colors to represent different cell types
+ggplot(acc_pr,aes(x = clock,y = age_acc,fill = clock)) +
+geom_boxplot() + theme_bw() +
+# compare the significance of age acceleration of chol and hep with all
+theme(legend.position = "right") + 
+labs(x = "Clocks",y = "Age acceleration (years)") +
+theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+# add a title
+scale_fill_manual(values = c("red","blue","green")) + 
+ggtitle("Obese liver age acceleration predicted by different clocks")+
+# add a dashed line of y = 0
+geom_hline(yintercept = 0,linetype = "dashed",color = "black")+
+# hide gridding lines
+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+guides(fill=guide_legend(title=NULL))+
+# hide xlab
+theme(axis.title.x = element_blank())+
+# y sacle: -30 to 30
+ylim(-30,30)+
+# add p-value
+annotate("text",x = "All",y = 25,label = format(p[1],digits = 2),size = 3)+
+annotate("text",x = "Chol",y = 25,label = format(p[2],digits = 2),size = 3)+
+annotate("text",x = "Hep",y = 25,label = format(p[3],digits = 2),size = 3)
+dev.off()
+
+```
+
+9.  Comparing the age acceleration between normal liver and NAFLD liver Using GSE180474
+
+```{r}
+load("~/data/infinium/liver_sample/341_liver_samples/RData/GSE180474_qc.Rd")
+
+library(tidyr)
+idx <- which(qc.o@s$desease!=0)
+m <- qc.o@m[,idx]
+s <- qc.o@s[idx,]
+qc_te.o <- new("qc.o")
+qc_te.o@m <- m
+qc_te.o@s <- s
+gse <- "GSE180474"
+age_de_c <- validate(qc_te.o,clock_epic,gse)
+age_de_a <- validate(qc_te.o,clock_ben_e,gse)
+age_de <- c(age_de_c,age_de_a)
+acc_de <- list()
+for (i in 1:length(age_de)){
+# calculate the age acceleration
+# acc_pre[[cell]] <- age_pre[[cell]] - qc_te.o@s$age
+acc_de[[i]] <-age_de[[i]] - qc_te.o@s$age # resid method
+}
+acc_de <- as.data.frame(acc_de)
+colnames(acc_de) <- c("Hep","Chol","All")
+
+
+acc_nor <- list()
+for (i in 1:length(re[[2]]$age_pre)){
+# calculate the age acceleration
+# acc_pre[[cell]] <- age_pre[[cell]] - qc_te.o@s$age
+acc_nor[[i]] <-re[[2]]$age_pre[[i]] - he.o@s$age # resid method
+}
+acc_al <- re_ben_e[[2]] - he.o@s$age
+acc_nor[["all"]] <- acc_al
+
+acc_pre <- as.data.frame(acc_nor)
+# Change the sequence of all and hep
+colnames(acc_pre) <- c("Hep","Chol","All")
+
+
+acc <- rbind(acc_pre,acc_de)
+
+ill_nor <- rep("0",210)
+ill_de <- qc_te.o@s$desease
+ill <- c(ill_nor,ill_de)
+
+acc$ill <- ill
+acc$ill <- factor(acc$ill,levels = c("0","1","2","3"),labels = c("Grade0:n=210","Grade3:n=55","Grade34:n=36","Grade4:n=24"))
+acc_pr <- gather(acc,clock,age_acc,-ill)
+
+p <- c()
+ps <- list()
+for (i in 1:3){
+  for(b in levels(acc$ill)){
+      p[[b]] <-format(wilcox.test(acc[which(acc$ill==b),i],mu = 0,alternative = "greater")$p.value,scientific = TRUE,digits=1)}
+
+
+  ps[[i]] <- p
+}
+acc <- acc[,c(3,2,1,4)]
+```
+
+```{r}
+
+#Draw a boxplot of age acceleration against different disease status, in the boxplot each status has 3 boxplots, which represent the age acceleration of 3 cell types.
+pdf("GSE180474_age-acc_disease.pdf",width = 10,height = 6)
+# Using one boxplot to display all cell types
+p <- ggplot(acc_pr,aes(x = ill,y = age_acc,fill = clock)) + 
+geom_boxplot() + theme_bw() + 
+theme(legend.position = "right") + 
+labs(x = "Disease status",y = "Age acceleration (years)") + 
+scale_fill_manual(values = c("red","blue","green")) + 
+theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+# hide the title of legend
+guides(fill=guide_legend(title=NULL))+
+# add a title
+ggtitle("NAFLD liver age acceleration predicted by different clocks")+
+# add a dashed line of y = 0
+geom_hline(yintercept = 0,linetype = "dashed",color = "black")+
+# hide gridding lines
+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+p_list <- ggplot_build(p)
+x_pos<-as.numeric(p_list$data[[1]]$x)
+# add p-value
+ xpos <- 0.75
+ k <- 0.75
+for (i in 1:3){
+  for(b in levels(acc$ill)){
+    print(xpos)
+    # get the y position of the p-value
+    pos <- max(acc[which(acc$ill==b),i])
+    # add the p-value
+    p <- p + annotate("text",x = xpos,y = pos+2,label = format(ps[[i]][[b]],digits = 2),size = 3)
+  xpos <- xpos + 1
+  
+  }
+  xpos <- k+0.25
+  k <- k +0.25
+}
+p
+dev.off()
+```
+
+10. correlation between clocks
+
+```{r}
 clocks <- clock(trainset,dmct_hc)
 testset@GSE <- "GSE180474"
 age_pre <- validate(testset,clocks)
-```
-
-2.  Validation: Bulk
-
-```{r}
-# GSE107038: 40
-load("~/data/infinium/liver_sample/40_normal_liver_samples/GSE107038_qc.Rd")
-pip_pre(qc_107038.o,trainset,dmct_hc)
-# GSE61446
-load("~/data/infinium/liver_sample/67_obese_livers/GSE61446/GSE61446_qc.Rd")
-pip_pre(qc.o,trainset,dmct_hc)
-# GSE61258
-load("~/data/infinium/liver_sample/79_livers(25_healthy)/GSE61258/GSE61258_qc.Rd")
-disease <- as.factor(qc.o@s$disease)
-age <- qc.o@s$age
-age_pre <- pip_pre(qc.o,trainset,dmct_hc)
-
-# There are 6 levels of disease: 0,1,2,3,4,5, which represent Healthy,HealthyObese,NAFLD,PBC,PSC and NASH.
-# NOW we plot scatterplot for age_pre against age_t and color the points by disease.
-for (i in 1:length(age_pre)){
-cell <- names(age_pre)[[i]]
-cor <- cor(age_pre[[i]][,1],age,method = "pearson")
-p <- cor.test(age_pre[[i]][,1],age)$p.value
-MAE <- median(abs(age_pre[[i]][,1]-age))
-# Output PDF files for this cell type
-pdf(paste0(cell," GSE61258.pdf"))
-# Plot the predicted age and real age with a 45 degree dashed line and a mark of correlation and RMSE
-plot(age,age_pre[[i]][,1],col=disease,pch=19,xlab="Chronological age (years)",ylab = "Predicted age (years)",xlim = c(10,80),ylim = c(10,80),main = paste0(cell," clock"))
-abline(0,1,lty = 2)
-text(20,40,paste0("r = ",format(cor, digits = 3),"\n","p = ",format(p, digits = 1),"\n","MedAE: ",format(MAE, digits = 2),"years"))
-# ADD a legend for the color
-legend("topleft",legend = c("Healthy","HealthyObese","NAFLD","PBC","PSC","NASH")
-       ,col = c(1,2,3,4,5,6),pch = 19)
-dev.off()
-}
-# BUILD-UP SAMPLE
-load("~/data/infinium/liver_sample/combine_64_he_samples/107038+61258.Rd")
-age_pre <- pip_pre(qc.on,trainset,dmct_hc)
-```
-
-3.  Validation: Sort
-
-```{r}
-load("~/data/infinium/liver_sample/AA_hepatocytes/GSE123995_qc.Rd")
-age_pre <- pip_pre(qc.o,trainset,dmct_hc)
-```
-
-4.  benchmarking
-
-```{r}
-all_c <- rep(1,nrow(he.o@m))
-# Build a data frame with only 1 column using all_c and using the same rownames as he.o@m
-dmct_ben <- data.frame(all_c, row.names = rownames(he.o@m))
-colnames(dmct_ben) <- "all"
 clocks_ben <- clock(trainset,dmct_ben)
-age_pre <- validate(testset,clocks_ben)
-
-pip_pre(qc_107038.o,trainset,dmct_ben)
-load("~/data/infinium/liver_sample/67_obese_livers/GSE61446/GSE61446_qc.Rd")
-pip_pre(qc.o,trainset,dmct_ben)
-
-load("~/data/infinium/liver_sample/79_livers(25_healthy)/GSE61258/GSE61258_qc.Rd")
-disease <- as.factor(qc.o@s$disease)
-age <- qc.o@s$age
-age_pre <- pip_pre(qc.o,trainset,dmct_ben)
-
-# There are 6 levels of disease: 0,1,2,3,4,5, which represent Healthy,HealthyObese,NAFLD,PBC,PSC and NASH.
-# NOW we plot scatterplot for age_pre against age_t and color the points by disease.
-for (i in 1:length(age_pre)){
-cell <- names(age_pre)[[i]]
-cor <- cor(age_pre[[i]][,1],age,method = "pearson")
-p <- cor.test(age_pre[[i]][,1],age)$p.value
-MAE <- median(abs(age_pre[[i]][,1]-age))
-# Output PDF files for this cell type
-pdf(paste0(cell," GSE61258.pdf"))
-# Plot the predicted age and real age with a 45 degree dashed line and a mark of correlation and RMSE
-plot(age,age_pre[[i]][,1],col=disease,pch=19,xlab="Chronological age (years)",ylab = "Predicted age (years)",xlim = c(10,80),ylim = c(10,80),main = paste0(cell," clock"))
+age_al <- validate(testset,clocks_ben)
+age_pre$all <- age_al[[1]]
+ages <- as.data.frame(age_pre)
+colnames(ages) <- c("Chol","Hep","All")
+pdf("age-correlation.pdf",width = 10,height = 8)
+par(mfrow=c(2,2))
+# correlation between ages of different clocks
+r <- cor(ages$Chol,ages$Hep,method = "pearson")
+# p-value of correlation
+p <- cor.test(ages$Chol,ages$Hep,method = "pearson")$p.value
+plot(ages$Chol,ages$Hep,xlab = "Age predicted by Chol clock",ylab = "Age predicted by Hep clock",main = paste("r = ",format(r, digits = 3),", p = ",format(p, digits = 1)))
 abline(0,1,lty = 2)
-text(20,40,paste0("r = ",format(cor, digits = 3),"\n","p = ",format(p, digits = 1),"\n","MedAE: ",format(MAE, digits = 2),"years"))
-# ADD a legend for the color
-legend("topleft",legend = c("Healthy","HealthyObese","NAFLD","PBC","PSC","NASH")
-       ,col = c(1,2,3,4,5,6),pch = 19)
+
+r <- cor(ages$Chol,ages$All,method = "pearson")
+p <- cor.test(ages$Chol,ages$All,method = "pearson")$p.value
+plot(ages$Chol,ages$All,xlab = "Age predicted by Chol clock",ylab = "Age predicted by All clock",main = paste("r = ",format(r, digits = 3),", p = ",format(p, digits = 1)))
+abline(0,1,lty = 2)
+r <- cor(ages$Hep,ages$All,method = "pearson")
+# p-value of correlation
+p <- cor.test(ages$Hep,ages$All,method = "pearson")$p.value
+plot(ages$Hep,ages$All,xlab = "Age predicted by Hep clock",ylab = "Age predicted by All clock",main = paste("r = ",format(r, digits = 3),", p = ",format(p, digits = 1)))
+abline(0,1,lty = 2)
 dev.off()
-}
-# BUILD-UP SAMPLE
-load("~/data/infinium/liver_sample/combine_64_he_samples/107038+61258.Rd")
-age_pre <- pip_pre(qc.on,trainset,dmct_ben)
 
-load("~/data/infinium/liver_sample/AA_hepatocytes/GSE123995_qc.Rd")
-age_pre <- pip_pre(qc.o,trainset,dmct_ben)
+
 ```
 
-5.  Validating on CD4T and CD8T: GSE71955
+11 acc cor
 
 ```{r}
-library(EpiDISH)
-BloodFrac.m <- epidish(beta.m = cd4_qc.o@m, ref.m = centDHSbloodDMC.m, method = "RPC")$estF
-cd4_qc.o@ctf.o <- list(BloodFrac.m,boxplot(BloodFrac.m))
-BloodFrac.m <- epidish(beta.m = cd8_qc.o@m, ref.m = centDHSbloodDMC.m, method = "RPC")$estF
-cd8_qc.o@ctf.o <- list(BloodFrac.m,boxplot(BloodFrac.m))
-save(cd4_qc.o,file = "CD4_qc.Rd")
-save(cd8_qc.o,file = "CD8_qc.Rd")
-
-age_pre <- pip_pre(cd4_qc.o,trainset,dmct_hc)
-age_pre <- pip_pre(cd8_qc.o,trainset,dmct_hc)
-```
-
-6.  Validating on kidney , colon and prostate
-
-```{r}
-# kidney
-age_pre <- pip_pre(qc.o,trainset,dmct_hc)
-# prostate
-age_pre <- pip_pre(hey.o,trainset,dmct_hc)
-# colon
-age_pre <- pip_pre(he.o,trainset,dmct_hc)
+# correlation between age acceleration of different clocks
+accs_odi <- ages
+accs_odi$Chol <- accs_odi$Chol - testset@age
+accs_odi$Hep <- accs_odi$Hep - testset@age
+accs_odi$All <- accs_odi$All - testset@age
+accs_rsi <- ages
+accs_rsi$Chol <- resid(lm(ages$Chol ~ testset@age))
+accs_rsi$Hep <- resid(lm(ages$Hep ~ testset@age))
+accs_rsi$All <- resid(lm(ages$All ~ testset@age))
+pdf("age-acc-correlation.pdf",width = 12,height = 8)
+par(mfrow=c(2,3))
+r <- cor(accs_odi$Chol,accs_odi$Hep,method = "pearson")
+p <- cor.test(accs_odi$Chol,accs_odi$Hep,method = "pearson")$p.value
+plot(accs_odi$Chol,accs_odi$Hep,xlab = "Age acceleration predicted by Chol clock",ylab = "Age acceleration predicted by Hep clock",main = paste("r = ",format(r, digits = 3),", p = ",format(p, digits = 1)))
+abline(0,1,lty = 2)
+r <- cor(accs_odi$Chol,accs_odi$All,method = "pearson")
+p <- cor.test(accs_odi$Chol,accs_odi$All,method = "pearson")$p.value
+plot(accs_odi$Chol,accs_odi$All,xlab = "Age acceleration predicted by Chol clock",ylab = "Age acceleration predicted by All clock",main = paste("r = ",format(r, digits = 3),", p = ",format(p, digits = 1)))
+abline(0,1,lty = 2)
+r <- cor(accs_odi$Hep,accs_odi$All,method = "pearson")
+p <- cor.test(accs_odi$Hep,accs_odi$All,method = "pearson")$p.value
+plot(accs_odi$Hep,accs_odi$All,xlab = "Age acceleration predicted by Hep clock",ylab = "Age acceleration predicted by All clock",main = paste("r = ",format(r, digits = 3),", p = ",format(p, digits = 1)))
+abline(0,1,lty = 2)
+r <- cor(accs_rsi$Chol,accs_rsi$Hep,method = "pearson")
+p <- cor.test(accs_rsi$Chol,accs_rsi$Hep,method = "pearson")$p.value
+plot(accs_rsi$Chol,accs_rsi$Hep,xlab = "Age acceleration predicted by Chol clock",ylab = "Age acceleration predicted by Hep clock",main = paste("r = ",format(r, digits = 3),", p = ",format(p, digits = 1)))
+abline(0,1,lty = 2)
+r <- cor(accs_rsi$Chol,accs_rsi$All,method = "pearson")
+p <- cor.test(accs_rsi$Chol,accs_rsi$All,method = "pearson")$p.value
+plot(accs_rsi$Chol,accs_rsi$All,xlab = "Age acceleration predicted by Chol clock",ylab = "Age acceleration predicted by All clock",main = paste("r = ",format(r, digits = 3),", p = ",format(p, digits = 1)))
+abline(0,1,lty = 2)
+r <- cor(accs_rsi$Hep,accs_rsi$All,method = "pearson")
+p <- cor.test(accs_rsi$Hep,accs_rsi$All,method = "pearson")$p.value
+plot(accs_rsi$Hep,accs_rsi$All,xlab = "Age acceleration predicted by Hep clock",ylab = "Age acceleration predicted by All clock",main = paste("r = ",format(r, digits = 3),", p = ",format(p, digits = 1)))
+abline(0,1,lty = 2)
+dev.off()
 ```

@@ -1,0 +1,60 @@
+---
+title: "GSE216024"
+output:
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+knitr::opts_knit$set(root.dir = "/mnt/local-disk/data/guoxiaolong/Renv")
+```
+
+```{r packages}
+source("~/code/Dmathy/Damthy.R")
+library(data.table)
+load("~/data/infinium/GPL21145/annoEPICv1B4.Rd")
+library(minfi)
+library(EpiSCORE)
+```
+
+```{r  phenotypes}
+series <- as.data.frame(t(fread("~/data/infinium/colon/GSE216024/GSE216024_series_matrix.txt",sep = "\t",header = T)))
+colnames(series) <- series[1,]
+series <- series[-1,]
+colnames(series) <- c("GSM","age","sex","bmi","disease","race")
+sex <- sapply(strsplit(series[,3], " "), function(x) x[[2]])
+series$sex <- ifelse(sex == "M",1,0)
+series$age <- as.numeric(sapply(strsplit(series[,2], " "), function(x) x[[2]]))
+series$bmi <- as.numeric(sapply(strsplit(series[,4], " "), function(x) x[[2]]))
+series$disease <- ifelse(grepl("Yes",series$disease),1,0)
+series$race <- as.factor(ifelse(grepl("African",series$race),"AA","EA"))
+series$sentrixPos <- as.factor(sapply(strsplit(rownames(series), "_"), function(x) x[[2]]))
+series$sentrixID <- as.factor(sapply(strsplit(rownames(series), "_"), function(x) x[[1]]))
+```
+
+```{r idat}
+
+GPL <- as.data.frame(annoEPICv1B4.m)
+rgset <- read.metharray.exp("~/data/infinium/colon/GSE216024/idat")
+rawDat <- f.rawD(rgset = rgset,GPL = GPL,series = series)
+```
+
+```{r}
+raw.o <- f.raw.o(rawDat)
+coverage(raw.o)
+raw.o <- imp(raw.o) #1
+s <- series[,-1]
+raw.o@raw.s <- s
+colnames(raw.o@raw.m) <- rownames(s)
+raw.o@beta_dtr <- beta_dtp(raw.o)
+raw.o@beta_dtr[[1]]
+qc.o <- f.qc.o(raw.o)
+qc.o@beta_dtr[[1]]
+save("qc.o",file = "GSE216024_qc.Rd")
+# no reference for 
+qc.o@ctf.o <- CTF(qc.o,mref.m)
+qc.o@svd.o <- lm_svd(qc.o)
+p_h(qc.o,pic = c(27,4))
+```
