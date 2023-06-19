@@ -379,6 +379,7 @@ setMethod("validate","pp",function(obj,clocks,gse,...){
     p <- cor.test(age_pre[[cell]],age_te,method = "pearson")$p.value
     # Calculate the Median Absolute Error between predicted age and real age
     MAE <- median(abs(age_pre[[cell]]-age_te))
+    print(MAE)
     # Set the cell type name
     if(cell == "Hep"){
       cell_all <- "Hepatocyte"
@@ -616,3 +617,48 @@ setMethod("colon_clock","pp",function(obj,covs,seqs,nP=10,...){
   
   
   })
+
+# horvath
+
+#### ComputeHorvathAge.R
+
+library(gdata);
+library(foreign);
+
+horv.df <- read.xls("~/code/packages/Horvath353agepred.xls")
+horvageP.lv <- list();
+horvageP.lv[[1]] <- as.numeric(horv.df[1,2]);
+horvageP.lv[[2]] <- as.numeric(as.vector(horv.df[2:nrow(horv.df),2])); 
+names(horvageP.lv[[2]]) <- as.vector(horv.df[2:nrow(horv.df),1]);# extract intersect and coefficients
+
+### transform age functions
+ageF <- function(age.v,adult.age=20){
+  young.idx <- which(age.v <= adult.age);
+  adult.idx <- which(age.v > adult.age);
+  tage.v <- age.v;
+  tage.v[adult.idx] <- (age.v[adult.idx]-adult.age)/(1+adult.age);
+  tage.v[young.idx] <- log(age.v[young.idx]+1) - log(adult.age+1);
+  return(tage.v);
+}
+
+iageF <- function(ptage.v,adult.age=20){
+  
+  y.idx <- which(ptage.v <= 0);
+  a.idx <- which(ptage.v>0);
+  mage.v <- ptage.v;
+  mage.v[a.idx] <- ptage.v[a.idx]*(adult.age+1) + adult.age;
+  mage.v[y.idx] <- exp(ptage.v[y.idx] + log(adult.age+1)) -1 ;
+  return(mage.v);
+}
+
+PredTage <- function(beta.m){
+  
+  match(names(horvageP.lv[[2]]),rownames(beta.m)) -> map.idx;
+  rep.idx <- which(is.na(map.idx)==FALSE);
+  tmpB.m <- beta.m[map.idx[rep.idx],];
+  tage.v <- vector();
+  for(s in 1:ncol(tmpB.m)){
+    tage.v[s] <- horvageP.lv[[1]] + sum(tmpB.m[,s]*horvageP.lv[[2]][rep.idx]);
+  }
+  return(tage.v);
+}

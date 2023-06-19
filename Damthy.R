@@ -54,14 +54,14 @@ setClass("Damthy", slots = list(name = "character"),
 
 
 ## ----instantiation function-----------------------------------------
-f.rawD <- function(rgset,GPL,m_pval = data.frame(),series,...){
+f.rawD <- function(rgset,GPL,m_pval = data.frame(),...){
   if (ncol(m_pval) != 0){
     print(paste0("you got the processed data with p values of ",GSEnumber))
-    rawD <- new("rawD", m_pval = m_pval, series = series) 
+    rawD <- new("rawD", m_pval = m_pval) 
     rawD@GPL <- GPL[match(rawD@m_pval[,1],GPL$Name),] #match GPL to m
   }else if(ncol(m_pval) == 0) {
     rgset <- rgset
-    rawD <- new("rawD", rgset = list(rgset), series = as.data.frame(series))
+    rawD <- new("rawD", rgset = list(rgset))
     rawD@GPL <- GPL #match GPL to m
   
     }

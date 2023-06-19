@@ -16,6 +16,7 @@ output_file <- file("output.txt")
 sink(output_file, append = TRUE)
 load("~/data/infinium/liver_sample/341_liver_samples/RData/GSE180474_he.Rd")
 source("~/code/Dmathy/ELN_clock.R")
+load("~/result/clock/train/GSE180474_clock.Rd")
 GPL <- fread("~/data/infinium/GPL_files/GPL13534/GPL13534-11288.txt", header = T)
 GPL <- as.data.frame(GPL)
 common_cpg <- intersect(GPL$ID,rownames(he.o@m))
@@ -60,6 +61,7 @@ load("~/data/infinium/liver_sample/AA_hepatocytes/GSE123995_qc.Rd")
 gse <- "GSE123995"
 age_hep <- validate(qc.o,clock_epic,gse)
 age_all_hep <- validate(qc.o,clock_ben_e,gse)
+age_hov_hep <- iageF(PredTage(qc.o@m))
 file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
 file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
 
@@ -70,6 +72,7 @@ load("~/data/infinium/liver_sample/40_normal_liver_samples/GSE107038_qc.Rd")
 gse <- "GSE103078"
 age_40 <- validate(qc_107038.o,clock_450k,gse)
 age_40_all <- validate(qc_107038.o,clock_ben_4,gse)
+age_40_hov <- iageF(PredTage(qc_107038.o@m))
 file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
 file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
 
@@ -80,33 +83,42 @@ load("~/data/infinium/liver_sample/67_obese_livers/GSE61446/GSE61446_qc.Rd")
 gse <- "GSE61446"
 age_ob <- validate(qc.o,clock_450k,gse)
 age_all_ob <- validate(qc.o,clock_ben_4,gse)
+age_ob_hov <- iageF(PredTage(qc.o@m))
 file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
 file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
 
 # 5. GSE61258
-load("~/data/infinium/liver_sample/79_livers(25_healthy)/GSE61258/GSE61258_qc.Rd")
-dir.create("/mnt/local-disk/data/guoxiaolong/Renv/79/")
-new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/79/"
+load("~/data/infinium/liver_sample/79_livers(25_healthy)/GSE61258/GSE61258_he.Rd")
+# load("~/data/infinium/liver_sample/79_livers(25_healthy)/GSE61258/GSE61258_qc.Rd")
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/32/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/32/"
 gse <- "GSE61258"
-age_mix <- validate(qc.o,clock_450k,gse)
-age_mix_all <- validate(qc.o,clock_ben_4,gse)
+age_25 <- validate(he.o,clock_450k,gse)
+age_25_all <- validate(he.o,clock_ben_4,gse)
+age_25_hov <- iageF(PredTage(he.o@m))
+# age_79 <- validate(qc.o,clock_450k,gse)
+# age_79_all <- validate(qc.o,clock_ben_4,gse)
 file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
 file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
-# 6. Validating on CD4T and CD8T: GSE71955
-load("~/data/infinium/purified_blood/GSE71955/CD4_qc.Rd")
-load("~/data/infinium/purified_blood/GSE71955/CD8_qc.Rd")
+# 6. Validating on CD4T: GSE56581
+load("~/data/infinium/purified_blood/GSE56581/ReynoldsCD4T_he.Rd")
 dir.create("/mnt/local-disk/data/guoxiaolong/Renv/CD4/")
 new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/CD4/"
-gse <- "GSE71955_CD4"
-age_cd4 <- validate(cd4_qc.o,clock_450k,gse)
-age_cd4_all <- validate(cd4_qc.o,clock_ben_4,gse)
+gse <- "GSE56581_CD4"
+age_cd4 <- validate(CD4T_qc.o,clock_450k,gse)
+age_cd4_all <- validate(CD4T_qc.o,clock_ben_4,gse)
+age_cd4_hov <- iageF(PredTage(CD4T_qc.o@m))
 file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
 file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
-dir.create("/mnt/local-disk/data/guoxiaolong/Renv/CD8/")
-new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/CD8/"
-gse <- "GSE71955_CD8"
-age_cd8 <- validate(cd8_qc.o,clock_450k,gse)
-age_cd8_all <- validate(cd8_qc.o,clock_ben_4,gse)
+
+
+load("~/data/infinium/purified_blood/GSE56056/GSE56046_he.Rd")
+dir.create("/mnt/local-disk/data/guoxiaolong/Renv/MONO/")
+new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/MONO/"
+gse <- "GSE56046_MONO"
+age_mono <- validate(mono_he.o,clock_450k,gse)
+age_mono_all <- validate(mono_he.o,clock_ben_4,gse)
+age_mono_hov <- iageF(PredTage(mono_he.o@m))
 file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
 file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
 # 7. Validating on kidney , colon and prostate
@@ -117,6 +129,7 @@ new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/colon/"
 gse <- "GSE131013"
 age_colon <- validate(he_colon.o,clock_450k,gse)
 age_colon_all <- validate(he_colon.o,clock_ben_4,gse)
+age_colon_hov <- iageF(PredTage(he_colon.o@m))
 file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
 file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
 # prostate
@@ -126,6 +139,7 @@ dir.create("/mnt/local-disk/data/guoxiaolong/Renv/prostate/")
 new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/prostate/"
 age_pros <- validate(hey.o,clock_450k,gse)
 age_pros_all <- validate(hey.o,clock_ben_4,gse)
+age_pros_hov <- iageF(PredTage(hey.o@m))
 file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
 file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
 # kidney
@@ -135,6 +149,7 @@ dir.create("/mnt/local-disk/data/guoxiaolong/Renv/kidney/")
 new_folder_path <-"/mnt/local-disk/data/guoxiaolong/Renv/kidney/"
 age_kid <- validate(qc.o,clock_450k,gse)
 age_kid_all <- validate(qc.o,clock_ben_4,gse)
+age_kid_hov <- iageF(PredTage(qc.o@m))
 file.copy(from = list.files(path = "/mnt/local-disk/data/guoxiaolong/Renv/", pattern = ".pdf|.Rd"), to = new_folder_path, overwrite = TRUE)
 file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|.Rd"))
 
@@ -146,30 +161,64 @@ file.remove(list.files("/mnt/local-disk/data/guoxiaolong/Renv", pattern = ".pdf|
 library(ggplot2)
 library(tidyr)
 library(ggsignif)
-df_mix <-  data.frame(age_mix_all$All, age_mix$Chol, age_mix$Hep)
-df_mix<-df_mix-qc.o@s$age
+load("~/data/infinium/liver_sample/79_livers(25_healthy)/GSE61258/GSE61258_qc.Rd")
+df_mix <-  data.frame(age_79_all$All, age_79$Chol, age_79$Hep)
+#df_mix<-df_mix-qc.o@s$age
+for(s in 1:ncol(df_mix)){
+  df_mix[,s] <- resid(lm(df_mix[,s]~qc.o@s$age))
+}
+
 colnames(df_mix) <- c("All","Chol","Hep")
 ill <- qc.o@s$disease
-df_mix$ill <- ill
-df_mix$ill <- factor(df_mix$ill,levels = c("0","1","2","3","4","5"),labels = c("Healthy:n=26","HealthyObese:n=6","NAFLD:n=14","PBC:n=12","PSC:n=14","NASH:n=7"))
+df_mix$bmi <- qc.o@s$bmi
+df_mix$ill <- as.numeric(ill)
+df_mix$hep_f <- qc.o@ctf.o[[1]][,3]
+df_mix$Chol_f <- qc.o@ctf.o[[1]][,1]
+#horvath
+H_age<-iageF(PredTage(qc.o@m))
+acc_h <- resid(lm(H_age~qc.o@s$age))
+
+df_mix$Hov<-acc_h
+# df_mix$ill <- factor(df_mix$ill,levels = c("0","1","2","3","4","5"),labels = c("Healthy:n=26","HealthyObese:n=6","NAFLD:n=14","PBC:n=12","PSC:n=14","NASH:n=7"))
 # welcoxon test
+
+df_mix_ob <- df_mix[df_mix$ill %in% c(1,2),]
+df_mix_ob <- df_mix_ob[,-c(4:7)] 
 p <- c()
-ps <- list()
-for (i in 1:3){
-  for(b in levels(df_mix$ill)){
-      p[[b]] <-format(wilcox.test(df_mix[which(df_mix$ill==b),i],mu = 0,alternative = "greater")$p.value,scientific = TRUE,digits=1)}
-
-
-  ps[[i]] <- p
+for (i in c(1:4)){
+      p[i] <-format(wilcox.test(df_mix_ob[,i],mu = 0,alternative = "two.sided")$p.value,scientific = TRUE,digits=1)
 }
-    
-acc_pr <- gather(df_mix,clock,age_acc,-ill)
-
+acc_df <- gather(df_mix_ob,clock,age_acc)
+pdf("GSE61258_age-acc.pdf",width = 6,height = 6)
+ggplot(acc_df,aes(x = clock,y = age_acc,fill = clock)) +
+geom_boxplot() + theme_bw() +
+# compare the significance of age acceleration of chol and hep with all
+theme(legend.position = "right") + 
+labs(x = "Clocks",y = "Age acceleration (years)") +
+theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+# add a title
+scale_fill_manual(values = c("red","blue","green","purple")) + 
+ggtitle("Obese liver age acceleration predicted by different clocks")+
+# add a dashed line of y = 0
+geom_hline(yintercept = 0,linetype = "dashed",color = "black")+
+# hide gridding lines
+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+guides(fill=guide_legend(title=NULL))+
+# hide xlab
+theme(axis.title.x = element_blank())+
+# y sacle: -30 to 30
+ylim(-30,30)+
+# add p-value
+annotate("text",x = "All",y = 30,label = p[1],size = 3)+
+annotate("text",x = "Chol",y = 30,label = p[2],size = 3)+
+annotate("text",x = "Hep",y = 30,label = p[3],size = 3)+
+annotate("text",x = "Hov",y = 30,label = p[4],size = 3)
+dev.off()
 ```
 
 ```{r}
 #Draw a boxplot of age acceleration against different disease status, in the boxplot each status has 3 boxplots, which represent the age acceleration of 3 cell types.
-pdf("GSE61258_age-acc_disease.pdf",width = 10,height = 6)
+pdf("GSE61258_age-acc.pdf",width = 6,height = 6)
 # Using one boxplot to display all cell types
 p <- ggplot(acc_pr,aes(x = ill,y = age_acc,fill = clock)) + 
 geom_boxplot() + theme_bw() + 
@@ -228,14 +277,122 @@ acc_pre[[i]] <- age_df[[i]] - qc.o@s$age # resid method
 acc_pre <- as.data.frame(acc_pre)
 # Change the sequence of all and hep
 colnames(acc_pre) <- c("All","Chol","Hep")
+acc_o <- acc_pre
+acc_o$bmi <- qc.o@s$bmi
+age_h <- iageF(PredTage(qc.o@m))
+acc_h <- age_h - qc.o@s$age
+acc_o$Hov <- acc_h
+acc_o$hep_f <- qc.o@ctf.o[[1]][,3]
+
+
+
+library(tidyr)
+acc_pre$Hov <- acc_h
 acc_pr <- gather(acc_pre,clock,age_acc)
 #Draw a boxplot of age acceleration of different cell types
 # Use different colors to represent different cell types
 p <- c()
-for (i in 1:3){
+for (i in 1:4){
 p[i] <-format(wilcox.test(acc_pre[,i],mu = 0,alternative = "two.sided")$p.value,scientific = TRUE,digits=1)}
 
 ```
+
+
+```{r}
+pdf("bmi-aa_gse61446.pdf",width = 8,height = 8)
+par(mfrow=c(2,2))
+plot(acc_o$bmi,acc_o$Hep,xlab = "BMI",ylab = "Age acceleration",main = "Hep")
+abline(lm(acc_o$Hep~acc_o$bmi))
+text(x=65,y=20,label = paste0("PCC: ",format(cor(acc_o$bmi,acc_o$Hep),digits=2),", ","P = ",format(cor.test(acc_o$bmi,acc_o$Hep)$p.value,digits =1)))
+plot(acc_o$bmi,acc_o$Chol,xlab = "BMI",ylab = "Age acceleration",main = "Chol")
+abline(lm(acc_o$Chol~acc_o$bmi))
+text(x=65,y=-25,label = paste0("PCC: ",format(cor(acc_o$bmi,acc_o$Chol),digits=2),", ","P = ",format(cor.test(acc_o$bmi,acc_o$Chol)$p.value,digits =1)))
+plot(acc_o$bmi,acc_o$All,xlab = "BMI",ylab = "Age acceleration",main = "All")
+abline(lm(acc_o$All~acc_o$bmi))
+text(x=65,y=-15,label = paste0("PCC: ",format(cor(acc_o$bmi,acc_o$All),digits=2),", ","P = ",format(cor.test(acc_o$bmi,acc_o$All)$p.value,digits =1)))
+plot(acc_o$bmi,acc_o$Hov,xlab = "BMI",ylab = "Age acceleration",main = "Hov")
+abline(lm(acc_o$Hov~acc_o$bmi))
+text(x=65,y=-10,label = paste0("PCC: ",format(cor(acc_o$bmi,acc_o$Hov),digits=2),", ","P = ",format(cor.test(acc_o$bmi,acc_o$Hov)$p.value,digits =1)))
+dev.off()
+```
+
+```{r}
+
+pdf("bmi-aa_gse61258.pdf",width = 8,height = 8)
+par(mfrow=c(2,2))
+plot(df_mix_c$bmi,df_mix_c$Hep,xlab = "BMI",ylab = "Age acceleration",main = "Hep")
+abline(lm(df_mix_c$Hep~df_mix_c$bmi))
+text(x=55,y=25,label = paste0("PCC: ",format(cor(df_mix_c$bmi,df_mix_c$Hep),digits=2),", ","P = ",format(cor.test(df_mix_c$bmi,df_mix_c$Hep)$p.value,digits =1)))
+plot(df_mix_c$bmi,df_mix_c$Chol,xlab = "BMI",ylab = "Age acceleration",main = "Chol")
+abline(lm(df_mix_c$Chol~df_mix_c$bmi))
+text(x=55,y=-40,label = paste0("PCC: ",format(cor(df_mix_c$bmi,df_mix_c$Chol),digits=2),", ","P = ",format(cor.test(df_mix_c$bmi,df_mix_c$Chol)$p.value,digits =1)))
+plot(df_mix_c$bmi,df_mix_c$All,xlab = "BMI",ylab = "Age acceleration",main = "All")
+abline(lm(df_mix_c$All~df_mix_c$bmi))
+text(x=55,y=-15,label = paste0("PCC: ",format(cor(df_mix_c$bmi,df_mix_c$All),digits=2),", ","P = ",format(cor.test(df_mix_c$bmi,df_mix_c$All)$p.value,digits =1)))
+plot(df_mix_c$bmi,df_mix_c$Hov,xlab = "BMI",ylab = "Age acceleration",main = "Hov")
+abline(lm(df_mix_c$Hov~df_mix_c$bmi))
+text(x=55,y=-15,label = paste0("PCC: ",format(cor(df_mix_c$bmi,df_mix_c$Hov),digits=2),", ","P = ",format(cor.test(df_mix_c$bmi,df_mix_c$Hov)$p.value,digits =1)))
+dev.off()
+```
+
+210
+```{r}
+acc_he <- acc[acc$ill == 3,]
+acc_he <- acc_he[,-c(4:7,9)] 
+p <- c()
+for (i in c(1:4)){
+      p[i] <-format(wilcox.test(acc_he[,i],mu = 0,alternative = "greater")$p.value,scientific = TRUE,digits=1)
+}
+acc_df <- gather(acc_he,clock,age_acc)
+
+pdf("24_age-acc.pdf",width = 6,height = 6)
+ggplot(acc_df,aes(x = clock,y = age_acc,fill = clock)) +
+geom_boxplot() + theme_bw() +
+# compare the significance of age acceleration of chol and hep with all
+theme(legend.position = "right") + 
+labs(x = "Clocks",y = "Age acceleration (years)") +
+theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+# add a title
+scale_fill_manual(values = c("red","blue","green","purple")) + 
+ggtitle("24 grade4 samples age acceleration")+
+# add a dashed line of y = 0
+geom_hline(yintercept = 0,linetype = "dashed",color = "black")+
+# hide gridding lines
+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+guides(fill=guide_legend(title=NULL))+
+# hide xlab
+theme(axis.title.x = element_blank())+
+# y sacle: -30 to 30
+ylim(-30,30)+
+# add p-value
+annotate("text",x = "All",y = 30,label = p[1],size = 3)+
+annotate("text",x = "Chol",y = 30,label = p[2],size = 3)+
+annotate("text",x = "Hep",y = 30,label = p[3],size = 3)+
+annotate("text",x = "Hov",y = 30,label = p[4],size = 3)
+dev.off()
+```
+
+
+```{r}
+pdf("bmi-aa_210.pdf",width = 8,height = 8)
+par(mfrow=c(2,2))
+plot(he.o@s$bmi,acc_he$Hep,xlab = "BMI",ylab = "Age acceleration",main = "Hep")
+abline(lm(acc_he$Hep~he.o@s$bmi))
+text(x=70,y=15,label = paste0("PCC: ",format(cor(he.o@s$bmi,acc_he$Hep),digits=2),", ","P = ",format(cor.test(he.o@s$bmi,acc_he$Hep)$p.value,digits =1)))
+plot(he.o@s$bmi,acc_he$Chol,xlab = "BMI",ylab = "Age acceleration",main = "Chol")
+abline(lm(acc_he$Chol~he.o@s$bmi))
+text(x=70,y=15,label = paste0("PCC: ",format(cor(he.o@s$bmi,acc_he$Chol),digits=2),", ","P = ",format(cor.test(he.o@s$bmi,acc_he$Chol)$p.value,digits =1)))
+plot(he.o@s$bmi,acc_he$All,xlab = "BMI",ylab = "Age acceleration",main = "All")
+abline(lm(acc_he$All~he.o@s$bmi))
+text(x=70,y=10,label = paste0("PCC: ",format(cor(he.o@s$bmi,acc_he$All),digits=2),", ","P = ",format(cor.test(he.o@s$bmi,acc_he$All)$p.value,digits =1)))
+plot(he.o@s$bmi,acc_he$Hov,xlab = "BMI",ylab = "Age acceleration",main = "Hov")
+abline(lm(acc_he$Hov~he.o@s$bmi))
+text(x=70,y=-15,label = paste0("PCC: ",format(cor(he.o@s$bmi,acc_he$Hov),digits=2),", ","P = ",format(cor.test(he.o@s$bmi,acc_he$Hov)$p.value,digits =1)))
+dev.off()
+```
+
+
+
 
 ```{r}
 pdf("GSE61446_age-acc_bmi.pdf",width = 6,height = 6)
@@ -247,7 +404,7 @@ theme(legend.position = "right") +
 labs(x = "Clocks",y = "Age acceleration (years)") +
 theme(axis.text.x = element_text(angle = 45, hjust = 1))+
 # add a title
-scale_fill_manual(values = c("red","blue","green")) + 
+scale_fill_manual(values = c("red","blue","green","purple")) + 
 ggtitle("Obese liver age acceleration predicted by different clocks")+
 # add a dashed line of y = 0
 geom_hline(yintercept = 0,linetype = "dashed",color = "black")+
@@ -259,12 +416,23 @@ theme(axis.title.x = element_blank())+
 # y sacle: -30 to 30
 ylim(-30,30)+
 # add p-value
-annotate("text",x = "All",y = 25,label = format(p[1],digits = 2),size = 3)+
-annotate("text",x = "Chol",y = 25,label = format(p[2],digits = 2),size = 3)+
-annotate("text",x = "Hep",y = 25,label = format(p[3],digits = 2),size = 3)
+annotate("text",x = "All",y = 26,label = format(p[1],digits = 2),size = 3)+
+annotate("text",x = "Chol",y = 26,label = format(p[2],digits = 2),size = 3)+
+annotate("text",x = "Hep",y = 26,label = format(p[3],digits = 2),size = 3)+
+annotate("text",x = "Hov",y = 26,label = format(p[4],digits = 2),size = 3)
 dev.off()
 
 ```
+8. Applying Horvath clock
+```{r}
+# GSE180474
+load("~/data/infinium/liver_sample/341_liver_samples/RData/GSE180474_qc.Rd")
+H_de_age<-iageF(PredTage(qc_te.o@m))
+H_he_age<-iageF(PredTage(he.o@m))
+H_age <- c(H_he_age,H_de_age)
+acc_h <- H_age - c(he.o@s$age,qc_te.o@s$age)
+```
+
 
 9.  Comparing the age acceleration between normal liver and NAFLD liver Using GSE180474
 
@@ -278,6 +446,7 @@ s <- qc.o@s[idx,]
 qc_te.o <- new("qc.o")
 qc_te.o@m <- m
 qc_te.o@s <- s
+qc_te.o@ctf.o[[1]] <- qc.o@ctf.o[[1]][idx,]
 gse <- "GSE180474"
 age_de_c <- validate(qc_te.o,clock_epic,gse)
 age_de_a <- validate(qc_te.o,clock_ben_e,gse)
@@ -293,10 +462,10 @@ colnames(acc_de) <- c("Hep","Chol","All")
 
 
 acc_nor <- list()
-for (i in 1:length(re[[2]]$age_pre)){
+for (i in 1:length(re_epic[[2]]$age_pre)){
 # calculate the age acceleration
 # acc_pre[[cell]] <- age_pre[[cell]] - qc_te.o@s$age
-acc_nor[[i]] <-re[[2]]$age_pre[[i]] - he.o@s$age # resid method
+acc_nor[[i]] <-re_epic[[2]]$age_pre[[i]] - he.o@s$age # resid method
 }
 acc_al <- re_ben_e[[2]] - he.o@s$age
 acc_nor[["all"]] <- acc_al
@@ -307,13 +476,54 @@ colnames(acc_pre) <- c("Hep","Chol","All")
 
 
 acc <- rbind(acc_pre,acc_de)
-
+acc$Hov<-acc_h
+ctf <- rbind(he.o@ctf.o[[1]],qc_te.o@ctf.o[[1]])
+bmi <- c(he.o@s$bmi,qc_te.o@s$bmi)
 ill_nor <- rep("0",210)
 ill_de <- qc_te.o@s$desease
 ill <- c(ill_nor,ill_de)
 
-acc$ill <- ill
+acc$ill <- as.numeric(ill)
+acc$bmi <- bmi
+acc$hep_f <- ctf[,3]
+
+
+acc_lm<-lm(Hep~ill + hep_f + bmi,data = acc)
+acc_lm3 <- lm(acc$hep_f~acc$ill)
+acc_lm2 <- lm(Hep~ill,data = acc)
+acc_lm1 <- lm(Hep~hep_f+bmi,data = acc)
+res_ill <- resid(acc_lm1)
+boxplot(acc$hep_f~acc$ill,xlab = "Grades",ylab = "hepatocyte fraction")
+boxplot(acc$Chol_f~acc$ill,xlab = "Grades",ylab = "cholangiocyte fraction")
+boxplot(resid(acc_lm1)~acc$ill,xlab = "Grades",ylab = "Residuals",main = "resid(lm(acc ~ fraction(hepatocyte))")
+
+acc_lm4<-lm(ages~ill + hep_f,data = acc)
+acc_lm5 <- lm(ages~hep_f,data = acc)
+boxplot(resid(acc_lm5)~acc$ill,xlab = "Grades",ylab = "Residuals",main = "resid(lm(ages ~ fraction(hepatocyte))")
+acc$Hep <- res_ill
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 acc$ill <- factor(acc$ill,levels = c("0","1","2","3"),labels = c("Grade0:n=210","Grade3:n=55","Grade34:n=36","Grade4:n=24"))
+acc <- acc[,-5]
+
+
+
+library(tidyr)
+
+
 acc_pr <- gather(acc,clock,age_acc,-ill)
 
 p <- c()
@@ -373,14 +583,10 @@ dev.off()
 10. correlation between clocks
 
 ```{r}
-clocks <- clock(trainset,dmct_hc)
-testset@GSE <- "GSE180474"
-age_pre <- validate(testset,clocks)
-clocks_ben <- clock(trainset,dmct_ben)
-age_al <- validate(testset,clocks_ben)
-age_pre$all <- age_al[[1]]
-ages <- as.data.frame(age_pre)
-colnames(ages) <- c("Chol","Hep","All")
+ages<-re_epic[[2]]$age_pre
+ages[[3]] <- re_ben_e[[2]]
+ages <- as.data.frame(ages)
+colnames(ages) <- c("Hep","Chol","All")
 pdf("age-correlation.pdf",width = 10,height = 8)
 par(mfrow=c(2,2))
 # correlation between ages of different clocks
@@ -409,13 +615,13 @@ dev.off()
 ```{r}
 # correlation between age acceleration of different clocks
 accs_odi <- ages
-accs_odi$Chol <- accs_odi$Chol - testset@age
-accs_odi$Hep <- accs_odi$Hep - testset@age
-accs_odi$All <- accs_odi$All - testset@age
+accs_odi$Chol <- accs_odi$Chol - he.o@s$age
+accs_odi$Hep <- accs_odi$Hep - he.o@s$age
+accs_odi$All <- accs_odi$All - he.o@s$age
 accs_rsi <- ages
-accs_rsi$Chol <- resid(lm(ages$Chol ~ testset@age))
-accs_rsi$Hep <- resid(lm(ages$Hep ~ testset@age))
-accs_rsi$All <- resid(lm(ages$All ~ testset@age))
+accs_rsi$Chol <- resid(lm(ages$Chol ~ he.o@s$age))
+accs_rsi$Hep <- resid(lm(ages$Hep ~ he.o@s$age))
+accs_rsi$All <- resid(lm(ages$All ~ he.o@s$age))
 pdf("age-acc-correlation.pdf",width = 12,height = 8)
 par(mfrow=c(2,3))
 r <- cor(accs_odi$Chol,accs_odi$Hep,method = "pearson")
@@ -444,3 +650,446 @@ plot(accs_rsi$Hep,accs_rsi$All,xlab = "Age acceleration predicted by Hep clock",
 abline(0,1,lty = 2)
 dev.off()
 ```
+# figure 2
+training result
+```{r}
+# draw scatterplot for predicted age in re_epic[[2]]$age_pre with chronological age in he.o@s$age using ggplot2
+# first, create a data frame
+pdf("hep_clock.pdf",width = 4,height = 4)
+ages <- data.frame(Hep = re_epic[[2]]$age_pre[[1]],Chol = re_epic[[2]]$age_pre[[2]],All = re_ben_e[[2]],true = he.o@s$age)
+r <- cor(ages$Hep,ages$true,method = "pearson")
+p <- cor.test(ages$Hep,ages$true,method = "pearson")$p.value
+mae <- mean(abs(ages$Hep - ages$true))
+# then, draw scatterplot
+library(ggplot2)
+ggplot(ages,aes(x = true,y = Hep))+
+#orange points
+geom_point(size = 0.7,colour = "#F4B183")+
+ labs(x = "Chronological age",y = "DNAm age")+
+ geom_abline(intercept = 0,slope = 1,linetype = "dashed")+ 
+# hide axis line and using grid instead
+theme(axis.line = element_blank())+
+theme(axis.title.y = element_blank(),axis.ticks.y = element_blank())+
+  xlim(10,80)+
+ylim(10,80)+# add correlation coefficient,pvalue and MAE
+# add correlation coefficient,pvalue and MAE,
+annotate("text",x = 35,y = 80,label = paste("PCC = ",format(r, digits = 2),", P = ",format(p, digits = 1)),size = 5)+
+annotate("text",x = 20,y = 75,label = paste("MAE = ",format(mae, digits = 2)),size = 5)
+dev.off()
+pdf("chol_clock.pdf",width = 4,height = 4)
+r <- cor(ages$Chol,ages$true,method = "pearson")
+p <- cor.test(ages$Chol,ages$true,method = "pearson")$p.value
+mae <- mean(abs(ages$Chol - ages$true))
+# then, draw scatterplot
+library(ggplot2)
+ggplot(ages,aes(x = true,y = Chol))+
+#orange points
+geom_point(size = 0.7,colour = "#A9D18E")+
+ labs(x = "Chronological age",y = "DNAm age")+
+ geom_abline(intercept = 0,slope = 1,linetype = "dashed")+ 
+# hide axis line and using grid instead
+theme(axis.line = element_blank())+
+#hide y axis title and ticks
+
+  xlim(10,80)+
+ylim(10,80)+# add correlation coefficient,pvalue and MAE
+# add correlation coefficient,pvalue and MAE,
+annotate("text",x = 35,y = 80,label = paste("PCC = ",format(r, digits = 2),", P = ",format(p, digits = 1)),size = 5)+
+annotate("text",x = 20,y = 75,label = paste("MAE = ",format(mae, digits = 2)),size = 5)
+dev.off()
+pdf("all_clock.pdf",width = 4,height = 4)
+r <- cor(ages$All,ages$true,method = "pearson")
+p <- cor.test(ages$All,ages$true,method = "pearson")$p.value
+mae <- mean(abs(ages$All - ages$true))
+# then, draw scatterplot
+library(ggplot2)
+ggplot(ages,aes(x = true,y = All))+
+#orange points
+geom_point(size = 0.7,colour = "black")+
+ labs(x = "Chronological age",y = "DNAm age")+
+ geom_abline(intercept = 0,slope = 1,linetype = "dashed")+ 
+# hide axis line and using grid instead
+theme(axis.line = element_blank())+
+#hide y axis title and ticks
+theme(axis.title.y = element_blank(),axis.ticks.y = element_blank())+
+  xlim(10,80)+
+ylim(10,80)+# add correlation coefficient,pvalue and MAE
+# add correlation coefficient,pvalue and MAE,
+annotate("text",x = 35,y = 80,label = paste("PCC = ",format(r, digits = 2),", P = ",format(p, digits = 1)),size = 5)+
+annotate("text",x = 20,y = 75,label = paste("MAE = ",format(mae, digits = 2)),size = 5)
+dev.off()
+```
+
+GSE107038:40
+
+```{r}
+ages <- data.frame(Hep = age_40[[1]][,1],Chol = age_40[[2]][,1],All = age_40_all[[1]][,1],true = qc_107038.o@s$age, Hov = age_40_hov)
+r <- cor(ages$Hep,ages$true,method = "pearson")
+p <- cor.test(ages$Hep,ages$true,method = "pearson")$p.value
+mae <- mean(abs(ages$Hep - ages$true))
+pdf("hep_40.pdf",width = 4,height = 4)
+ggplot(ages,aes(x = true,y = Hep))+
+#orange points
+geom_point(size = 2,colour = "#F4B183")+
+ labs(x = "Chronological age (years)",y = "DNAm age")+
+ geom_abline(intercept = 0,slope = 1,linetype = "dashed")+ 
+# hide axis line and using grid instead
+theme(axis.line = element_blank())+
+theme(axis.title.y = element_blank(),axis.ticks.y = element_blank())+
+  xlim(10,90)+
+ylim(10,90)+# add correlation coefficient,pvalue and MAE
+# add correlation coefficient,pvalue and MAE,
+annotate("text",x = 35,y = 80,label = paste("PCC = ",format(r, digits = 2),", P = ",format(p, digits = 1)),size = 5)+
+annotate("text",x = 20,y = 75,label = paste("MAE = ",format(mae, digits = 2)),size = 5)+
+# add a title
+ggtitle("Hepatocyte clock")
+dev.off()
+r <- cor(ages$Chol,ages$true,method = "pearson")
+p <- cor.test(ages$Chol,ages$true,method = "pearson")$p.value
+mae <- mean(abs(ages$Chol - ages$true))
+
+pdf("chol_40.pdf",width = 4,height = 4)
+ggplot(ages,aes(x = true,y = Chol))+
+#orange points
+geom_point(size = 2,colour = "#A9D18E")+
+ labs(x = "Chronological age (years)",y = "DNAm age")+
+ geom_abline(intercept = 0,slope = 1,linetype = "dashed")+ 
+# hide axis line and using grid instead
+theme(axis.line = element_blank())+
+  xlim(10,90)+
+ylim(10,90)+# add correlation coefficient,pvalue and MAE
+# add correlation coefficient,pvalue and MAE,
+annotate("text",x = 35,y = 80,label = paste("PCC = ",format(r, digits = 2),", P = ",format(p, digits = 1)),size = 5)+
+annotate("text",x = 20,y = 75,label = paste("MAE = ",format(mae, digits = 2)),size = 5)+
+# add a title
+ggtitle("Cholangiocyte clock")
+dev.off()
+r <- cor(ages$All,ages$true,method = "pearson")
+p <- cor.test(ages$All,ages$true,method = "pearson")$p.value
+mae <- mean(abs(ages$All - ages$true))
+
+pdf("All_40.pdf",width = 4,height = 4)
+ggplot(ages,aes(x = true,y = All))+
+#orange points
+geom_point(size = 2,colour = "black")+
+ labs(x = "Chronological age (years)",y = "DNAm age")+
+ geom_abline(intercept = 0,slope = 1,linetype = "dashed")+ 
+# hide axis line and using grid instead
+theme(axis.line = element_blank())+
+theme(axis.title.y = element_blank(),axis.ticks.y = element_blank())+
+  xlim(10,90)+
+ylim(10,90)+# add correlation coefficient,pvalue and MAE
+# add correlation coefficient,pvalue and MAE,
+annotate("text",x = 35,y = 80,label = paste("PCC = ",format(r, digits = 2),", P = ",format(p, digits = 1)),size = 5)+
+annotate("text",x = 20,y = 75,label = paste("MAE = ",format(mae, digits = 2)),size = 5)+
+# add a title
+ggtitle("Benchmark clock")
+dev.off()
+
+r <- cor(ages$Hov,ages$true,method = "pearson")
+p <- cor.test(ages$Hov,ages$true,method = "pearson")$p.value
+mae <- mean(abs(ages$Hov - ages$true))
+pdf("Hov_40.pdf",width = 4,height = 4)
+ggplot(ages,aes(x = true,y = Hov))+
+#orange points
+geom_point(size = 2,colour = "purple")+
+ labs(x = "Chronological age (years)",y = "DNAm age")+
+ geom_abline(intercept = 0,slope = 1,linetype = "dashed")+ 
+# hide axis line and using grid instead
+theme(axis.line = element_blank())+
+theme(axis.title.y = element_blank(),axis.ticks.y = element_blank())+
+  xlim(10,90)+
+ylim(10,90)+# add correlation coefficient,pvalue and MAE
+# add correlation coefficient,pvalue and MAE,
+annotate("text",x = 35,y = 80,label = paste("PCC = ",format(r, digits = 2),", P = ",format(p, digits = 1)),size = 5)+
+annotate("text",x = 20,y = 75,label = paste("MAE = ",format(mae, digits = 2)),size = 5)+
+# add a title
+ggtitle("Horvath clock")
+dev.off()
+
+
+
+
+
+```
+gse123995:culture
+
+```{r}
+ages <- data.frame(Hep = age_hep[[1]][,1],Chol = age_hep[[2]][,1],All = age_all_hep[[1]][,1],true = qc.o@s$age,Hov = age_hov_hep)
+r <- cor(ages$Hep,ages$true,method = "pearson")
+p <- cor.test(ages$Hep,ages$true,method = "pearson")$p.value
+mae <- mean(abs(ages$Hep - ages$true))
+pdf("hep_cul.pdf",width = 4,height = 4)
+ggplot(ages,aes(x = true,y = Hep))+
+#orange points
+geom_point(size = 2,colour = "#F4B183")+
+ labs(x = "Chronological age (years)",y = "DNAm age")+
+ geom_abline(intercept = 0,slope = 1,linetype = "dashed")+ 
+# hide axis line and using grid instead
+theme(axis.line = element_blank())+
+theme(axis.title.y = element_blank(),axis.ticks.y = element_blank())+
+  xlim(-15,90)+
+ylim(-15,90)+# add correlation coefficient,pvalue and MAE
+# add correlation coefficient,pvalue and MAE,
+annotate("text",x = 35,y = 80,label = paste("PCC = ",format(r, digits = 2),", P = ",format(p, digits = 1)),size = 5)+
+annotate("text",x = 20,y = 75,label = paste("MAE = ",format(mae, digits = 2)),size = 5)+
+# add a title
+ggtitle("Hepatocyte clock")
+dev.off()
+r <- cor(ages$Chol,ages$true,method = "pearson")
+p <- cor.test(ages$Chol,ages$true,method = "pearson")$p.value
+mae <- mean(abs(ages$Chol - ages$true))
+pdf("chol_cul.pdf",width = 4,height = 4)
+ggplot(ages,aes(x = true,y = Chol))+
+#orange points
+geom_point(size = 2,colour = "#A9D18E")+
+ labs(x = "Chronological age (years)",y = "DNAm age")+
+ geom_abline(intercept = 0,slope = 1,linetype = "dashed")+ 
+# hide axis line and using grid instead
+theme(axis.line = element_blank())+
+  xlim(-15,90)+
+ylim(-15,90)+# add correlation coefficient,pvalue and MAE
+# add correlation coefficient,pvalue and MAE,
+annotate("text",x = 35,y = 80,label = paste("PCC = ",format(r, digits = 2),", P = ",format(p, digits = 1)),size = 5)+
+annotate("text",x = 20,y = 75,label = paste("MAE = ",format(mae, digits = 2)),size = 5)+
+# add a title
+ggtitle("Cholangiocyte clock")
+dev.off()
+r <- cor(ages$All,ages$true,method = "pearson")
+p <- cor.test(ages$All,ages$true,method = "pearson")$p.value
+mae <- mean(abs(ages$All - ages$true))
+pdf("All_cul.pdf",width = 4,height = 4)
+ggplot(ages,aes(x = true,y = All))+
+#orange points
+geom_point(size = 2,colour = "black")+
+ labs(x = "Chronological age (years)",y = "DNAm age")+
+ geom_abline(intercept = 0,slope = 1,linetype = "dashed")+ 
+# hide axis line and using grid instead
+theme(axis.line = element_blank())+
+theme(axis.title.y = element_blank(),axis.ticks.y = element_blank())+
+  xlim(-15,90)+
+ylim(-15,90)+# add correlation coefficient,pvalue and MAE
+# add correlation coefficient,pvalue and MAE,
+annotate("text",x = 35,y = 80,label = paste("PCC = ",format(r, digits = 2),", P = ",format(p, digits = 1)),size = 5)+
+annotate("text",x = 20,y = 75,label = paste("MAE = ",format(mae, digits = 2)),size = 5)+
+# add a title
+ggtitle("Benchmark clock")
+dev.off()
+
+r <- cor(ages$Hov,ages$true,method = "pearson")
+p <- cor.test(ages$Hov,ages$true,method = "pearson")$p.value
+mae <- mean(abs(ages$Hov - ages$true))
+pdf("Hov_hep.pdf",width = 4,height = 4)
+ggplot(ages,aes(x = true,y = Hov))+
+#orange points
+geom_point(size = 2,colour = "purple")+
+ labs(x = "Chronological age (years)",y = "DNAm age")+
+ geom_abline(intercept = 0,slope = 1,linetype = "dashed")+ 
+# hide axis line and using grid instead
+theme(axis.line = element_blank())+
+theme(axis.title.y = element_blank(),axis.ticks.y = element_blank())+
+  xlim(-15,90)+
+ylim(-15,90)+# add correlation coefficient,pvalue and MAE
+# add correlation coefficient,pvalue and MAE,
+annotate("text",x = 35,y = 80,label = paste("PCC = ",format(r, digits = 2),", P = ",format(p, digits = 1)),size = 5)+
+annotate("text",x = 20,y = 75,label = paste("MAE = ",format(mae, digits = 2)),size = 5)+
+# add a title
+ggtitle("Horvath clock")
+dev.off()
+
+
+
+
+```
+MAE and PCC in each dataset
+```{r}
+# calculate RMSE for each clock in all dataset
+rmse <- function(x,y){
+  sqrt(mean((x-y)^2))
+}
+load("~/data/infinium/liver_sample/40_normal_liver_samples/GSE107038_qc.Rd")
+rmse_40 <- c(rmse(age_40[[1]][,1],qc_107038.o@s$age),rmse(age_40[[2]][,1],qc_107038.o@s$age),rmse(age_40_all[[1]][,1],qc_107038.o@s$age))
+pcc_40 <- c(cor(age_40[[1]][,1],qc_107038.o@s$age)
+            ,cor(age_40[[2]][,1],qc_107038.o@s$age)
+            ,cor(age_40_all[[1]][,1],qc_107038.o@s$age)
+            ,cor(age_40_hov,qc_107038.o@s$age))
+mae_40 <- c(median(abs(age_40[[1]][,1]-qc_107038.o@s$age))
+            ,median(abs(age_40[[2]][,1]-qc_107038.o@s$age))
+            ,median(abs(age_40_all[[1]][,1]-qc_107038.o@s$age))
+            ,median(abs(age_40_hov-qc_107038.o@s$age)))
+
+load("~/data/infinium/liver_sample/AA_hepatocytes/GSE123995_qc.Rd")
+rmse_hep <-  c(rmse(age_hep[[1]][,1],qc.o@s$age),rmse(age_hep[[2]][,1],qc.o@s$age),rmse(age_all_hep[[1]][,1],qc.o@s$age))
+pcc_hep <- c(cor(age_hep[[1]][,1],qc.o@s$age)
+             ,cor(age_hep[[2]][,1],qc.o@s$age)
+             ,cor(age_all_hep[[1]][,1],qc.o@s$age)
+             ,cor(age_hov_hep,qc.o@s$age)
+             )
+mae_hep <- c(median(abs(age_hep[[1]][,1]-qc.o@s$age)),
+             median(abs(age_hep[[2]][,1]-qc.o@s$age)),
+             median(abs(age_all_hep[[1]][,1]-qc.o@s$age))
+             ,median(abs(age_hov_hep-qc.o@s$age)))
+load("~/data/infinium/liver_sample/67_obese_livers/GSE61446/GSE61446_qc.Rd")
+rmse_obese <- c(rmse(age_ob[[1]][,1],qc.o@s$age),rmse(age_ob[[2]][,1],qc.o@s$age),rmse(age_all_ob[[1]][,1],qc.o@s$age))
+pcc_obese <- c(cor(age_ob[[1]][,1],qc.o@s$age)
+               ,cor(age_ob[[2]][,1],qc.o@s$age)
+               ,cor(age_all_ob[[1]][,1],qc.o@s$age)
+               ,cor(age_ob_hov,qc.o@s$age))
+mae_obese <- c(median(abs(age_ob[[1]][,1]-qc.o@s$age))
+               ,median(abs(age_ob[[2]][,1]-qc.o@s$age))
+               ,median(abs(age_all_ob[[1]][,1]-qc.o@s$age))
+               ,median(abs(age_ob_hov-qc.o@s$age)))
+load("~/data/infinium/liver_sample/79_livers(25_healthy)/GSE61258/GSE61258_he.Rd")
+rmse_25 <- c(rmse(age_25[[1]][,1],he.o@s$age),rmse(age_25[[2]][,1],he.o@s$age),rmse(age_25_all[[1]][,1],he.o@s$age))
+pcc_25 <- c(cor(age_25[[1]][,1],he.o@s$age)
+            ,cor(age_25[[2]][,1],he.o@s$age)
+            ,cor(age_25_all[[1]][,1],he.o@s$age)
+            ,cor(age_25_hov,he.o@s$age))
+mae_25 <- c(median(abs(age_25[[1]][,1]-he.o@s$age))
+            ,median(abs(age_25[[2]][,1]-he.o@s$age))
+            ,median(abs(age_25_all[[1]][,1]-he.o@s$age))
+            ,median(abs(age_25_hov-he.o@s$age)))
+load("~/data/infinium/purified_blood/GSE56581/ReynoldsCD4T_he.Rd")
+rmse_cd4 <- c(rmse(age_cd4[[1]][,1],CD4T_qc.o@s$age),rmse(age_cd4[[2]][,1],CD4T_qc.o@s$age),rmse(age_cd4_all[[1]][,1],CD4T_qc.o@s$age))
+pcc_cd4 <- c(cor(age_cd4[[1]][,1],CD4T_qc.o@s$age)
+             ,cor(age_cd4[[2]][,1],CD4T_qc.o@s$age)
+             ,cor(age_cd4_all[[1]][,1],CD4T_qc.o@s$age)
+             ,cor(age_cd4_hov,CD4T_qc.o@s$age))
+mae_cd4 <- c(median(abs(age_cd4[[1]][,1]-CD4T_qc.o@s$age))
+             ,median(abs(age_cd4[[2]][,1]-CD4T_qc.o@s$age))
+             ,median(abs(age_cd4_all[[1]][,1]-CD4T_qc.o@s$age))
+             ,median(abs(age_cd4_hov-CD4T_qc.o@s$age)))
+load("~/data/infinium/purified_blood/GSE56056/GSE56046_he.Rd")
+rmse_mono <- c(rmse(age_mono[[1]][,1],mono_he.o@s$age),rmse(age_mono[[2]][,1],mono_he.o@s$age),rmse(age_mono_all[[1]][,1],mono_he.o@s$age))
+pcc_mono <- c(cor(age_mono[[1]][,1],mono_he.o@s$age)
+              ,cor(age_mono[[2]][,1],mono_he.o@s$age)
+              ,cor(age_mono_all[[1]][,1],mono_he.o@s$age)
+              ,cor(age_mono_hov,mono_he.o@s$age))
+mae_mono <- c(median(abs(age_mono[[1]][,1]-mono_he.o@s$age))
+              ,median(abs(age_mono[[2]][,1]-mono_he.o@s$age))
+              ,median(abs(age_mono_all[[1]][,1]-mono_he.o@s$age))
+              ,median(abs(age_mono_hov-mono_he.o@s$age)))
+load("~/data/infinium/colon/GSE131013/GSE131013_he.Rd")
+rmse_colon <- c(rmse(age_colon[[1]][,1],he_colon.o@s$age),rmse(age_colon[[2]][,1],he_colon.o@s$age),rmse(age_colon_all[[1]][,1],he_colon.o@s$age))
+pcc_colon <- c(cor(age_colon[[1]][,1],he_colon.o@s$age)
+               ,cor(age_colon[[2]][,1],he_colon.o@s$age)
+               ,cor(age_colon_all[[1]][,1],he_colon.o@s$age)
+               ,cor(age_colon_hov,he_colon.o@s$age))
+mae_colon <- c(median(abs(age_colon[[1]][,1]-he_colon.o@s$age))
+               ,median(abs(age_colon[[2]][,1]-he_colon.o@s$age))
+               ,median(abs(age_colon_all[[1]][,1]-he_colon.o@s$age))
+               ,median(abs(age_colon_hov-he_colon.o@s$age)))
+load("~/data/infinium/prostate/GSE76938_he.Rd")
+rmse_pros <- c(rmse(age_pros[[1]][,1],hey.o@s$age),rmse(age_pros[[2]][,1],hey.o@s$age),rmse(age_pros_all[[1]][,1],hey.o@s$age))
+pcc_pros <- c(cor(age_pros[[1]][,1],hey.o@s$age)
+              ,cor(age_pros[[2]][,1],hey.o@s$age)
+              ,cor(age_pros_all[[1]][,1],hey.o@s$age)
+              ,cor(age_pros_hov,hey.o@s$age))
+mae_pros <- c(median(abs(age_pros[[1]][,1]-hey.o@s$age))
+              ,median(abs(age_pros[[2]][,1]-hey.o@s$age))
+              ,median(abs(age_pros_all[[1]][,1]-hey.o@s$age))
+              ,median(abs(age_pros_hov-hey.o@s$age)))
+load("~/data/infinium/kidney/GSE79100_qc.Rd")
+rmse__kid <- c(rmse(age_kid[[1]][,1],qc.o@s$age),rmse(age_kid[[2]][,1],qc.o@s$age),rmse(age_kid_all[[1]][,1],qc.o@s$age))
+pcc_kid <- c(cor(age_kid[[1]][,1],qc.o@s$age)
+             ,cor(age_kid[[2]][,1],qc.o@s$age)
+             ,cor(age_kid_all[[1]][,1],qc.o@s$age)
+             ,cor(age_kid_hov,qc.o@s$age))
+mae_kid <- c(median(abs(age_kid[[1]][,1]-qc.o@s$age))
+             ,median(abs(age_kid[[2]][,1]-qc.o@s$age))
+             ,median(abs(age_kid_all[[1]][,1]-qc.o@s$age))
+             ,median(abs(age_kid_hov-qc.o@s$age)))
+# combine rmse into a dataframe
+rmse_df <- data.frame(rmse_40,rmse_25,rmse_hep,rmse_obese,rmse_cd4,rmse_mono,rmse_colon,rmse_pros,rmse__kid)
+pcc_df <- data.frame(pcc_40,pcc_25,pcc_hep,pcc_obese,pcc_cd4,pcc_mono,pcc_colon,pcc_pros,pcc_kid)
+mae_df <- data.frame(mae_40,mae_25,mae_hep,mae_obese,mae_cd4,mae_mono,mae_colon,mae_pros,mae_kid)
+# add rownames
+library(tidyr)
+library(dplyr)
+rownames(rmse_df) <- c("Hep","Chol","All")
+rmse_df <- rmse_df %>%
+  tibble::rownames_to_column(var = "clock")
+rmse_df <-  rmse_df %>% 
+  gather(key = "dataset",value = "rmse",2:10) %>% 
+  mutate(dataset = factor(dataset,levels = c("rmse_40","rmse_25","rmse_hep","rmse_obese","rmse_cd4","rmse_mono","rmse_colon","rmse_pros","rmse__kid"),labels = c("Normal (n=40)","Normal (n=25)","Cultures (n=55)","Obese (n=67)","CD4T (n=214)","Monocyte (n=1202)","Colon (n=96)","Prostate (n=51)","Kidney (n=93)")))
+rownames(pcc_df) <- c("Hep","Chol","All","Hov")
+pcc_df <- pcc_df %>%
+  tibble::rownames_to_column(var = "clock") %>% 
+  gather(key = "dataset",value = "pcc",2:10) %>% 
+  mutate(dataset = factor(dataset,levels = c("pcc_40","pcc_25","pcc_hep","pcc_obese","pcc_cd4","pcc_mono","pcc_colon","pcc_pros","pcc_kid"),labels = c("Normal (n=40)","Normal (n=25)","Cultures (n=55)","Obese (n=67)","CD4T (n=214)","Monocyte (n=1202)","Colon (n=96)","Prostate (n=51)","Kidney (n=93)")))
+rownames(mae_df) <- c("Hep","Chol","All","Hov")
+mae_df <- mae_df %>%
+  tibble::rownames_to_column(var = "clock") %>% 
+  gather(key = "dataset",value = "mae",2:10) %>% 
+  mutate(dataset = factor(dataset,levels = c("mae_40","mae_25","mae_hep","mae_obese","mae_cd4","mae_mono","mae_colon","mae_pros","mae_kid"),labels = c("Normal (n=40)","Normal (n=25)","Cultures (n=55)","Obese (n=67)","CD4T (n=214)","Monocyte (n=1202)","Colon (n=96)","Prostate (n=51)","Kidney (n=93)")))
+```
+
+```{r}
+
+pdf("rmse.pdf",width = 3,height = 4)
+ggplot(rmse_df,aes(x = dataset,y = rmse,fill = clock))+
+
+  # add a grey background for the first four datasets
+  geom_bar(stat = "identity",position = "dodge")+
+  labs(x = "Datasets",y = "RMSE")+
+  # set the color of different clocks
+  
+  scale_fill_manual(values = c("Hep" = "#F4B183","Chol" = "#A9D18E","All" = "#696969"))+
+  # hide the title of legend
+  guides(fill = guide_legend(title = NULL))+
+  # add a title
+  ggtitle("Root Mean Square error")+#put the lengnd on the right corner in the plot,平行排列
+  theme_bw()+
+   #white background,
+  theme(panel.background = element_rect(fill = "white",colour = "white"))+
+  # hide grid lines
+  theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank())+
+  # add a grey background for the first 4 dataset
+  geom_rect(xmin = 0.55,xmax = 4.45,ymin = 0,ymax = -5,fill = "#F0EAD6",alpha = 0.1)+
+  geom_rect(xmin = 4.55,xmax = 6.45,ymin = 0,ymax = -5,fill = "#FFB6C1",alpha = 0.1)+
+  geom_rect(xmin = 6.55,xmax = 7.45,ymin = 0,ymax = -5,fill = "#E6E6FA",alpha = 0.1)+
+  geom_rect(xmin = 7.55,xmax = 8.45,ymin = 0,ymax = -5,fill = "#D3D3D3",alpha = 0.1)+
+  geom_rect(xmin = 8.55,xmax = 9.45,ymin = 0,ymax = -5,fill = "#DEB887",alpha = 0.1)+
+  theme(axis.text.x = element_text(angle = 45,hjust = 1))
+dev.off()
+# draw barplot for pcc using ggplot2
+pdf("pcc.pdf",width = 5,height = 4)
+ggplot(pcc_df,aes(x = dataset,y = pcc,fill = clock))+
+  geom_bar(stat = "identity",position = "dodge")+
+  labs(x = "Datasets",y = "PCC")+
+  scale_fill_manual(values = c("Hep" = "#F4B183","Chol" = "#A9D18E","All" = "#696969","Hov" = "purple"))+
+  guides(fill = guide_legend(title = NULL))+
+  #ggtitle("Pearson Correlation Coefficient")+
+  theme_bw()+theme(legend.position = c(0.5,0.9),legend.direction = "horizontal")+
+  theme(panel.background = element_rect(fill = "white",colour = "white"))+
+  theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank())+
+  geom_rect(xmin = 0.55,xmax = 4.45,ymin = 0,ymax = -1,fill = "#F0EAD6",alpha = 0.1)+
+  geom_rect(xmin = 4.55,xmax = 6.45,ymin = 0,ymax = -1,fill = "#FFB6C1",alpha = 0.1)+
+  geom_rect(xmin = 6.55,xmax = 7.45,ymin = 0,ymax = -1,fill = "#E6E6FA",alpha = 0.1)+
+  geom_rect(xmin = 7.55,xmax = 8.45,ymin = 0,ymax = -1,fill = "#D3D3D3",alpha = 0.1)+
+  geom_rect(xmin = 8.55,xmax = 9.45,ymin = 0,ymax = -1,fill = "#DEB887",alpha = 0.1)+
+  theme(axis.text.x = element_text(angle = 45,hjust = 1))+
+  theme(legend.position = "none")
+dev.off()
+# draw barplot for mae
+pdf("mae.pdf",width = 5,height = 4)
+ggplot(mae_df,aes(x = dataset,y = mae,fill = clock))+
+  geom_bar(stat = "identity",position = "dodge")+
+  labs(x = "Datasets",y = "MAE")+
+  scale_fill_manual(values = c("Hep" = "#F4B183","Chol" = "#A9D18E","All" = "#696969","Hov" = "purple"))+
+  guides(fill = guide_legend(title = NULL))+
+  #ggtitle("Median Absolute Error")+
+  theme_bw()+theme(legend.position = c(0.9,0.9),legend.direction = "horizontal")+
+  theme(panel.background = element_rect(fill = "white",colour = "white"))+
+  theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank())+
+  geom_rect(xmin = 0.55,xmax = 4.45,ymin = 0,ymax = -3,fill = "#F0EAD6",alpha = 0.1)+
+  geom_rect(xmin = 4.55,xmax = 6.45,ymin = 0,ymax = -3,fill = "#FFB6C1",alpha = 0.1)+
+  geom_rect(xmin = 6.55,xmax = 7.45,ymin = 0,ymax = -3,fill = "#E6E6FA",alpha = 0.1)+
+  geom_rect(xmin = 7.55,xmax = 8.45,ymin = 0,ymax = -3,fill = "#D3D3D3",alpha = 0.1)+
+  geom_rect(xmin = 8.55,xmax = 9.45,ymin = 0,ymax = -3,fill = "#DEB887",alpha = 0.1)+
+  theme(axis.text.x = element_text(angle = 45,hjust = 1))+
+  #hide legend
+  theme(legend.position = "none")
+dev.off()
+```
+

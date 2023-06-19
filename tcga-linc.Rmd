@@ -1,0 +1,44 @@
+---
+title: "tcga-lihc"
+output:
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+knitr::opts_knit$set(root.dir = "/mnt/local-disk/data/guoxiaolong/Renv")
+```
+
+```{r packages}
+load(file = "clonical_information.Rd")
+source("~/code/Dmathy/Damthy.R")
+library(minfi)
+library(data.table)
+```
+
+```{r}
+GPL <- fread("~/data/infinium/GPL_files/GPL13534/GPL13534-11288.txt", sep = "\t", header = T)
+rgset <- read.metharray.exp("~/data/infinium/liver_sample/TCGA_LIHC/IDAT/")
+```
+
+```{r}
+
+```
+
+```{r}
+rawDat <- f.rawD(GPL = GPL,rgset = rgset)
+raw.o <- f.raw.o(rawDat)
+coverage(raw.o)
+raw.o <- imp(raw.o) #0.9
+raw.o@beta_dtr <- beta_dtp(raw.o)
+raw.o@raw.s <- series
+```
+
+```{r}
+qc.o <- f.qc.o(raw.o)
+qc.o@beta_dtr[[1]]
+
+```
+
